@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Super Star 英文學習入口</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & Noto Sans TC -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '"Noto Sans TC"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    html, body {
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior-y: contain;
+    }
+
+    /* 密碼錯誤時的輕微晃動動畫 */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-8px); }
+      40% { transform: translateX(8px); }
+      60% { transform: translateX(-5px); }
+      80% { transform: translateX(5px); }
+    }
+    .animate-shake {
+      animation: shake 0.36s ease-in-out;
+    }
+
+    /* 進入主畫面的淡入動畫 */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-up {
+      animation: fadeUp 0.28s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="font-sans text-slate-800 antialiased min-h-screen bg-gradient-to-b from-slate-50 via-blue-50/40 to-teal-50/40 flex flex-col">
+
+  <!-- =========================================================
+       1. 密碼鎖定畫面 (Lock Screen)
+  ========================================================== -->
+  <main id="lockScreen" class="flex-1 flex items-center justify-center px-4 py-10">
+    <div id="lockCard" class="w-full max-w-[400px] bg-white/95 backdrop-blur-md rounded-3xl shadow-xl shadow-slate-200/80 border border-slate-100 p-6 sm:p-8">
+      <!-- Top Icon & Title -->
+      <div class="text-center mb-6">
+        <div class="w-16 h-16 mx-auto mb-3.5 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-3xl shadow-lg shadow-blue-500/25">
+          🔐
+        </div>
+        <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">
+          Super Star 英文學習入口
+        </h1>
+        <p class="text-sm text-slate-500 font-medium mt-1">
+          請輸入家庭專屬密碼以進入學習頁面
+        </p>
+      </div>
+
+      <!-- Passcode Form -->
+      <form id="unlockForm" class="space-y-4" novalidate>
+        <div>
+          <label for="passcodeInput" class="sr-only">輸入密碼</label>
+          <div class="relative">
+            <input
+              id="passcodeInput"
+              type="password"
+              inputmode="numeric"
+              autocomplete="current-password"
+              placeholder="請輸入密碼"
+              class="w-full px-4 py-3.5 pr-12 rounded-2xl bg-slate-50 border-2 border-slate-200 focus:border-blue-500 focus:bg-white text-center text-lg font-bold tracking-[0.25em] text-slate-900 placeholder:tracking-normal placeholder:font-medium placeholder:text-slate-400 outline-none transition"
+            />
+            <button
+              id="toggleEyeBtn"
+              type="button"
+              aria-label="顯示或隱藏密碼"
+              class="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition"
+            >
+              👁️
+            </button>
+          </div>
+          <!-- Error Message -->
+          <p id="errorMsg" class="hidden text-center text-xs font-bold text-rose-500 mt-2">
+            密碼不正確，請再試一次！
+          </p>
+        </div>
+
+        <!-- Remember Device Checkbox -->
+        <label for="rememberCheckbox" class="flex items-center justify-center gap-2.5 py-1 cursor-pointer select-none">
+          <input
+            id="rememberCheckbox"
+            type="checkbox"
+            checked
+            class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+          />
+          <span class="text-sm font-medium text-slate-600">
+            記住這台裝置（下次免輸入）
+          </span>
+        </label>
+
+        <!-- Submit Button -->
+        <button
+          type="submit"
+          class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 active:scale-[0.98] text-white text-base font-extrabold shadow-lg shadow-blue-500/25 transition"
+        >
+          解鎖進入
+        </button>
+      </form>
+
+      <p class="text-center text-[11px] text-slate-400 mt-6">
+        本頁面為家庭自用英文學習入口，僅供個人練習使用
+      </p>
+    </div>
+  </main>
+
+  <!-- =========================================================
+       2. 主畫面學習入口 (Portal Screen)
+  ========================================================== -->
+  <div id="portalScreen" class="hidden flex-1 w-full max-w-[480px] mx-auto px-4 pt-5 pb-10 animate-fade-up">
+    <!-- Header -->
+    <header class="flex items-center justify-between gap-3 mb-6">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-500 to-teal-500 text-white flex items-center justify-center text-2xl shadow-md shadow-blue-500/20 shrink-0">
+          ⭐
+        </div>
+        <div class="min-w-0">
+          <h1 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight truncate">
+            Super Star 英文學習入口
+          </h1>
+          <p class="text-xs font-medium text-slate-500">
+            選擇冊別與練習項目，點擊即可開始
+          </p>
+        </div>
+      </div>
+
+      <!-- Lock Button -->
+      <button
+        id="lockBtn"
+        type="button"
+        class="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-600 border border-slate-200 hover:border-rose-200 text-xs font-bold shadow-sm active:scale-95 transition"
+      >
+        <span>🔒</span>
+        <span>鎖定</span>
+      </button>
+    </header>
+
+    <!-- Dynamic Learning Sections Container -->
+    <div id="sectionsContainer" class="space-y-6">
+      <!-- Rendered from PORTAL_SECTIONS -->
+    </div>
+
+    <!-- Footer Note -->
+    <footer class="mt-10 pt-4 border-t border-slate-200/70 text-center text-xs text-slate-400 leading-relaxed">
+      本網頁為家庭自用英文學習入口，請勿公開轉傳連結。
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      /* =========================================================
+         ★ 家長設定區：請在此修改密碼與學習連結清單 ★
+      ========================================================== */
+
+      // 1. 登入密碼（修改後，原本記住的裝置會自動要求重新輸入新密碼）
+      const PASSCODE = "3310";
+
+      // 2. 學習資源連結清單（未來要新增單元測驗或冊別，直接在此擴充即可）
+      const PORTAL_SECTIONS = [
+        {
+          id: "level1",
+          title: "Super Star Level 1",
+          icon: "🌟",
+          theme: "blue", // 亮藍色系
+          items: [
+            {
+              icon: "🎧",
+              title: "洗耳朵播放器",
+              subtitle: "全冊音檔循環・睡前定時・語速調整",
+              href: "./superstar_level1_player.html"
+            },
+            {
+              icon: "🚂",
+              title: "單字火車（Level 1 全冊）",
+              subtitle: "互動單字認讀與拼字練習",
+              href: "./單字火車%20Super%20Star%20Level%201%20全冊.html"
+            },
+            {
+              icon: "📝",
+              title: "Unit 2 Unit Test 重考練習",
+              subtitle: "聽力測驗・交卷批改・錯題重做",
+              href: "./super_star_level_1_unit_2_unit_test.html"
+            }
+          ]
+        },
+        {
+          id: "level4",
+          title: "Super Star Level 4",
+          icon: "🚀",
+          theme: "indigo", // 深靛藍／湖水青色系
+          items: [
+            {
+              icon: "🎧",
+              title: "洗耳朵播放器",
+              subtitle: "全冊音檔循環・睡前定時・語速調整",
+              href: "./superstar_level4_player.html"
+            },
+            {
+              icon: "🚂",
+              title: "單字火車（Level 4 全冊）",
+              subtitle: "互動單字認讀與拼字練習",
+              href: "./單字火車%20Super%20Star%20Level%204%20全冊.html"
+            }
+          ]
+        }
+      ];
+
+      /* =========================================================
+         以下為程式運作邏輯（一般不需修改）
+      ========================================================== */
+      const STORAGE_KEY = "superstar_portal_auth_v1";
+
+      const lockScreen = document.getElementById("lockScreen");
+      const lockCard = document.getElementById("lockCard");
+      const portalScreen = document.getElementById("portalScreen");
+      const unlockForm = document.getElementById("unlockForm");
+      const passcodeInput = document.getElementById("passcodeInput");
+      const toggleEyeBtn = document.getElementById("toggleEyeBtn");
+      const rememberCheckbox = document.getElementById("rememberCheckbox");
+      const errorMsg = document.getElementById("errorMsg");
+      const lockBtn = document.getElementById("lockBtn");
+      const sectionsContainer = document.getElementById("sectionsContainer");
+
+      // 主題色系設定
+      const THEMES = {
+        blue: {
+          headerBg: "bg-gradient-to-r from-blue-500 to-sky-500 text-white shadow-blue-500/20",
+          cardBorder: "border-blue-100 hover:border-blue-300",
+          iconBg: "bg-blue-50 text-blue-600 group-hover:bg-blue-100",
+          arrowColor: "text-blue-400 group-hover:text-blue-600"
+        },
+        indigo: {
+          headerBg: "bg-gradient-to-r from-indigo-800 via-indigo-700 to-teal-600 text-white shadow-indigo-900/20",
+          cardBorder: "border-indigo-100 hover:border-teal-400",
+          iconBg: "bg-teal-50 text-teal-700 group-hover:bg-teal-100",
+          arrowColor: "text-teal-500 group-hover:text-indigo-800"
+        }
+      };
+
+      // 渲染學習資源卡片
+      function renderPortal() {
+        sectionsContainer.innerHTML = PORTAL_SECTIONS.map(section => {
+          const t = THEMES[section.theme] || THEMES.blue;
+          const cardsHtml = section.items.map(item => `
+            <a
+              href="${item.href}"
+              class="group flex items-center gap-3.5 p-4 rounded-2xl bg-white border-2 ${t.cardBorder} shadow-sm hover:shadow-md active:scale-[0.98] transition-all"
+            >
+              <div class="w-12 h-12 rounded-2xl ${t.iconBg} flex items-center justify-center text-2xl shrink-0 transition-colors">
+                ${item.icon}
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[15px] font-extrabold text-slate-900 leading-snug">
+                  ${item.title}
+                </div>
+                ${item.subtitle ? `<div class="text-xs font-medium text-slate-500 mt-0.5 truncate">${item.subtitle}</div>` : ""}
+              </div>
+              <svg class="w-5 h-5 shrink-0 ${t.arrowColor} group-hover:translate-x-0.5 transition-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </a>
+          `).join("");
+
+          return `
+            <section>
+              <div class="inline-flex items-center gap-2 px-3.5 py-1.5 mb-3 rounded-full text-sm font-extrabold shadow-sm ${t.headerBg}">
+                <span>${section.icon}</span>
+                <span>${section.title}</span>
+              </div>
+              <div class="space-y-2.5">
+                ${cardsHtml}
+              </div>
+            </section>
+          `;
+        }).join("");
+      }
+
+      // 顯示主畫面
+      function showPortal() {
+        lockScreen.classList.add("hidden");
+        portalScreen.classList.remove("hidden");
+        errorMsg.classList.add("hidden");
+        passcodeInput.value = "";
+      }
+
+      // 顯示鎖定畫面
+      function showLockScreen() {
+        portalScreen.classList.add("hidden");
+        lockScreen.classList.remove("hidden");
+        passcodeInput.value = "";
+        errorMsg.classList.add("hidden");
+        setTimeout(() => passcodeInput.focus(), 100);
+      }
+
+      // 觸發密碼錯誤提示與晃動動畫
+      function triggerError() {
+        errorMsg.classList.remove("hidden");
+        lockCard.classList.remove("animate-shake");
+        void lockCard.offsetWidth; // 重新觸發 CSS animation
+        lockCard.classList.add("animate-shake");
+        passcodeInput.select();
+      }
+
+      // 驗證密碼表單送出
+      unlockForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+        const entered = passcodeInput.value.trim();
+        if (entered === PASSCODE) {
+          try {
+            if (rememberCheckbox.checked) {
+              localStorage.setItem(STORAGE_KEY, PASSCODE);
+            } else {
+              localStorage.removeItem(STORAGE_KEY);
+            }
+          } catch (err) {
+            // 忽略無痕模式或受限瀏覽器的 storage 錯誤
+          }
+          showPortal();
+        } else {
+          triggerError();
+        }
+      });
+
+      // 輸入時隱藏錯誤訊息
+      passcodeInput.addEventListener("input", function () {
+        errorMsg.classList.add("hidden");
+      });
+
+      // 切換密碼顯示 / 隱藏
+      toggleEyeBtn.addEventListener("click", function () {
+        const isHidden = passcodeInput.type === "password";
+        passcodeInput.type = isHidden ? "text" : "password";
+        toggleEyeBtn.textContent = isHidden ? "🙈" : "👁️";
+      });
+
+      // 鎖定按鈕：清除記住狀態並回到鎖定畫面
+      lockBtn.addEventListener("click", function () {
+        try {
+          localStorage.removeItem(STORAGE_KEY);
+        } catch (err) {
+          // 忽略 storage 錯誤
+        }
+        showLockScreen();
+      });
+
+      // 初始化
+      renderPortal();
+      let isRemembered = false;
+      try {
+        isRemembered = localStorage.getItem(STORAGE_KEY) === PASSCODE;
+      } catch (err) {
+        isRemembered = false;
+      }
+
+      if (isRemembered) {
+        showPortal();
+      } else {
+        showLockScreen();
+      }
+    })();
+  </script>
+</body>
+</html>
