@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>單字火車 Super Star Level 4</title>
+<style>
+:root{--bg:#fff8e7;--card:#fff;--ink:#2b2b2b;--muted:#7a7266;--y:#ffc21a;--o:#ff7a3d;--g:#2fa36b;--r:#e0533d;--b:#3a7bd5;--line:#eadfc8}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
+header{background:var(--y);padding:14px 16px 10px;text-align:center}
+header h1{margin:0;font-size:22px}
+header p{margin:4px 0 0;font-size:13px;color:#5a4a1a}
+nav{display:flex;gap:6px;overflow-x:auto;padding:10px 12px;background:#ffe9a8;position:sticky;top:0;z-index:5}
+nav button{flex:0 0 auto;border:0;border-radius:999px;padding:9px 14px;font-size:15px;background:#fff;color:var(--ink);cursor:pointer;font-family:inherit}
+nav button.on{background:var(--o);color:#fff;font-weight:700}
+main{max-width:560px;margin:0 auto;padding:14px 14px 40px}
+.hint{font-size:14px;color:var(--muted);margin:0 0 12px;line-height:1.5}
+.card{background:var(--card);border-radius:18px;box-shadow:0 2px 10px rgba(0,0,0,.08);overflow:hidden}
+.pic{width:100%;aspect-ratio:3/2;object-fit:cover;display:block;background:#eee}
+.big{font-size:32px;font-weight:700;text-align:center;padding:18px 10px 6px;letter-spacing:.5px;font-family:"Comic Sans MS","Andika",system-ui,sans-serif}
+.zh{text-align:center;font-size:18px;color:var(--muted);padding-bottom:16px}
+.row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:14px 0}
+.btn{border:0;border-radius:14px;padding:12px 18px;font-size:17px;font-family:inherit;cursor:pointer;background:var(--b);color:#fff;font-weight:600}
+.btn.alt{background:#fff;color:var(--ink);border:2px solid var(--line)}
+.btn.ok{background:var(--g)}.btn.no{background:var(--r)}
+.btn:active{transform:scale(.97)}
+.prog{text-align:center;font-size:14px;color:var(--muted);margin:6px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opt{border:4px solid transparent;border-radius:14px;overflow:hidden;cursor:pointer;background:#fff;padding:0}
+.opt img{width:100%;aspect-ratio:3/2;object-fit:cover;display:block}
+.opt.right{border-color:var(--g)}.opt.wrong{border-color:var(--r);opacity:.6}
+.flip{cursor:pointer;min-height:300px}
+.back{padding:30px 10px}
+input.spell{width:100%;font-size:24px;padding:12px;border-radius:12px;border:2px solid var(--line);text-align:center;font-family:inherit}
+.fb{text-align:center;font-size:18px;min-height:28px;margin:8px 0;font-weight:600}
+.fb.good{color:var(--g)}.fb.bad{color:var(--r)}
+.train{display:flex;flex-wrap:wrap;gap:6px;min-height:58px;padding:10px;border-radius:14px;background:#fff;border:2px dashed var(--line);align-items:center}
+.train.pool{background:transparent;border:0}
+.car{border:0;border-radius:10px;padding:10px 14px;font-size:20px;font-family:inherit;cursor:pointer;background:var(--y);color:var(--ink);font-weight:600;box-shadow:0 2px 0 #d9a000}
+.train:not(.pool) .car{background:#ffe0c9;box-shadow:0 2px 0 #f0b48c}
+.engine{font-size:26px}
+.list{display:flex;flex-direction:column;gap:8px}
+.li{display:flex;align-items:center;gap:10px;background:#fff;border-radius:12px;padding:8px}
+.li img{width:72px;height:48px;object-fit:cover;border-radius:8px}
+.li b{flex:1;font-size:17px}
+.tag{font-size:12px;padding:3px 8px;border-radius:999px;background:#fde2dd;color:var(--r)}
+.tag.okk{background:#d9f2e5;color:var(--g)}
+.note{background:#fff3d1;border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.55;color:#5a4a1a;margin-top:14px}
+.done{text-align:center;padding:30px 10px;font-size:20px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🚂 單字火車</h1>
+  <p>Super Star Level 4 全冊 ・ 每天 5–10 分鐘</p>
+</header>
+<div style="padding:10px 12px 0;max-width:560px;margin:0 auto"><select id="unitSel" style="width:100%;font-size:17px;padding:10px;border-radius:12px;border:2px solid var(--line);font-family:inherit;background:#fff"></select></div>
+<nav id="nav"></nav>
+<div id="scope" style="display:flex;gap:6px;justify-content:center;padding:10px 12px 0;flex-wrap:wrap"></div>
+<main id="app"></main>
+
+<script src="data.js"></script>
+<script>
+const B = window.BOOK;
+let unit = "U1", scope = "all";
+try { unit = localStorage.getItem("ss4-unit") || "U1"; scope = localStorage.getItem("ss4-scope") || "all"; } catch(e) {}
+const unitList = () => { const t = B.tests.find(t=>t.id===unit); return t ? t.units : [unit]; };
+const isPhonics = () => unitList().every(u => u.startsWith("P"));
+const isTest = () => unit.startsWith("T");
+const inScope = x => unitList().includes(x.u) && (isTest() || isPhonics() || scope==="all" || x.l===scope);
+const W = () => B.words.filter(inScope);
+const S = () => B.sents.filter(inScope);
+
+const TABS = [
+  {id:"cards", name:"① 字卡"},
+  {id:"listen", name:"② 聽音選圖"},
+  {id:"read", name:"③ 看字唸"},
+  {id:"spell", name:"④ 拼拼看"},
+  {id:"train", name:"🚂 句子火車"},
+  {id:"dict", name:"📝 家長聽寫"},
+  {id:"status", name:"⭐ 進度"}
+];
+
+// weak-word tracking (per browser; works without storage too)
+let weak = {};
+try { weak = JSON.parse(localStorage.getItem("ss4-weak") || "{}"); } catch(e) {}
+function mark(en, ok){
+  weak[en] = ok ? Math.max(0,(weak[en]||0)-1) : (weak[en]||0)+1;
+  try { localStorage.setItem("ss4-weak", JSON.stringify(weak)); } catch(e) {}
+}
+
+function speak(t){
+  try{
+    const s = window.speechSynthesis; if(!s) return;
+    s.cancel();
+    const u = new SpeechSynthesisUtterance(t);
+    u.lang = "en-US"; u.rate = 0.85;
+    const v = s.getVoices().find(v => /^en(-|_)US/i.test(v.lang)) || s.getVoices().find(v => /^en/i.test(v.lang));
+    if(v) u.voice = v;
+    s.speak(u);
+  }catch(e){}
+}
+try{ speechSynthesis.getVoices(); }catch(e){}
+
+const shuffle = a => { a=[...a]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+// weak words first, then the rest shuffled
+const order = () => { const s = shuffle(W()).sort((a,b)=>(weak[b.en]||0)-(weak[a.en]||0)); return isTest() ? s.slice(0,12) : s; };
+const $ = h => { const d=document.createElement("div"); d.innerHTML=h.trim(); return d.firstElementChild; };
+const app = document.getElementById("app");
+const norm = s => s.toLowerCase().replace(/[^a-z ]/g,"").replace(/\s+/g," ").trim();
+
+let current = "cards";
+function go(id){
+  if(!W().length && !["train","dict","status"].includes(id)) id="train";
+  if(!S().length && id==="train") id="cards";
+  current = id;
+  try{ speechSynthesis.cancel(); }catch(e){}
+  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on", b.dataset.id===id));
+  app.innerHTML = "";
+  VIEWS[id]();
+  window.scrollTo(0,0);
+}
+const nav = document.getElementById("nav");
+const scopeBox=document.getElementById("scope");
+const sel=document.getElementById("unitSel");
+B.units.forEach(u=>sel.appendChild(Object.assign(document.createElement("option"),{value:u.id,textContent:u.title})));
+B.tests.forEach(t=>sel.appendChild(Object.assign(document.createElement("option"),{value:t.id,textContent:"⭐ "+t.title})));
+if(![...sel.options].some(o=>o.value===unit)) unit="U1";
+sel.value=unit;
+sel.onchange=()=>{ unit=sel.value; scope="all"; try{localStorage.setItem("ss4-unit",unit);localStorage.setItem("ss4-scope",scope);}catch(e){} drawScope(); go(current); };
+function drawScope(){
+  scopeBox.innerHTML="";
+  if(isTest() || isPhonics()) return;
+  [["all","全部"],["L1","對話 Lesson 1"],["L2","Lesson 2"],["L3","Lesson 3"]].forEach(([k,n])=>{
+    const b=$(`<button class="btn ${k===scope?"":"alt"}" style="padding:7px 12px;font-size:14px">${n}</button>`);
+    b.onclick=()=>{ scope=k; try{localStorage.setItem("ss4-scope",k);}catch(e){} drawScope(); go(current); };
+    scopeBox.appendChild(b);
+  });
+}
+drawScope();
+TABS.forEach(t=>{ const b=$(`<button data-id="${t.id}">${t.name}</button>`); b.onclick=()=>go(t.id); nav.appendChild(b); });
+
+function finish(msg){
+  app.appendChild($(`<div class="card done">🎉 ${msg}<div class="row"><button class="btn" id="again">再來一次</button></div></div>`));
+  document.getElementById("again").onclick=()=>go(current);
+}
+
+const VIEWS = {
+  cards(){
+    let list = order(), i = 0, flipped = false;
+    app.appendChild($(`<p class="hint">先看圖猜意思，點卡片翻面看答案。按 🔊 聽唸法（正確發音請以課本音檔為準）。</p>`));
+    const box = $(`<div></div>`); app.appendChild(box);
+    function draw(){
+      const w = list[i];
+      box.innerHTML = "";
+      const c = flipped
+        ? $(`<div class="card flip"><img class="pic" src="${w.img}"><div class="big">${w.en}</div><div class="zh">${w.zh}${w.u.startsWith("P")?` ・ <b style="color:var(--o)">${w.l}</b>`:""}</div></div>`)
+        : $(`<div class="card flip"><img class="pic" src="${w.img}"><div class="back zh" style="font-size:20px">這是什麼？點一下翻面 👆</div></div>`);
+      c.onclick = ()=>{ flipped=!flipped; draw(); if(flipped) speak(w.en); };
+      box.appendChild(c);
+      box.appendChild($(`<div class="prog">${i+1} / ${list.length}</div>`));
+      const r = $(`<div class="row"><button class="btn alt" id="pv">⬅ 上一張</button><button class="btn" id="sp">🔊</button><button class="btn alt" id="nx">下一張 ➡</button></div>`);
+      box.appendChild(r);
+      r.querySelector("#pv").onclick=()=>{ i=(i-1+list.length)%list.length; flipped=false; draw(); };
+      r.querySelector("#nx").onclick=()=>{ i=(i+1)%list.length; flipped=false; draw(); };
+      r.querySelector("#sp").onclick=()=>speak(w.en);
+    }
+    draw();
+  },
+
+  listen(){
+    let list = order(), i = 0, score = 0;
+    app.appendChild($(`<p class="hint">按 🔊 聽，然後點出正確的圖片。</p>`));
+    const box = $(`<div></div>`); app.appendChild(box);
+    function draw(){
+      if(i>=list.length){ box.innerHTML=""; finish(`答對 ${score} / ${list.length} 題`); return; }
+      const w = list[i];
+      const opts = shuffle([w, ...shuffle(W().filter(x=>x!==w)).slice(0,3)]);
+      box.innerHTML = "";
+      const r = $(`<div class="row"><button class="btn" style="font-size:22px;padding:14px 30px">🔊 聽</button></div>`);
+      r.firstElementChild.onclick=()=>speak(w.en);
+      box.appendChild(r);
+      box.appendChild($(`<div class="prog">${i+1} / ${list.length}</div>`));
+      const g = $(`<div class="grid"></div>`); box.appendChild(g);
+      const fb = $(`<div class="fb"></div>`); box.appendChild(fb);
+      let tried = false;
+      opts.forEach(o=>{
+        const b = $(`<button class="opt"><img src="${o.img}" alt=""></button>`);
+        b.onclick=()=>{
+          if(o===w){
+            b.classList.add("right");
+            if(!tried){score++; mark(w.en,true);}
+            fb.className="fb good"; fb.textContent=`✔ ${w.en}（${w.zh}）`;
+            setTimeout(()=>{i++;draw();},1100);
+          }else{
+            b.classList.add("wrong");
+            if(!tried) mark(w.en,false);
+            tried=true; fb.className="fb bad"; fb.textContent="再聽一次試試看！";
+            speak(w.en);
+          }
+        };
+        g.appendChild(b);
+      });
+      setTimeout(()=>speak(w.en),300);
+    }
+    draw();
+  },
+
+  read(){
+    let list = order(), i = 0, score=0;
+    app.appendChild($(`<p class="hint">孩子看英文大聲唸出來。唸完按「看答案」聽聽看，再由家長按 ✔ 或 ✘。</p>`));
+    const box = $(`<div></div>`); app.appendChild(box);
+    function draw(){
+      if(i>=list.length){ box.innerHTML=""; finish(`唸對 ${score} / ${list.length} 個`); return; }
+      const w = list[i]; box.innerHTML="";
+      const c = $(`<div class="card"><div class="big" style="padding:50px 10px">${w.en}</div><div class="zh" id="ans" style="visibility:hidden">${w.zh}</div></div>`);
+      box.appendChild(c);
+      box.appendChild($(`<div class="prog">${i+1} / ${list.length}</div>`));
+      const r = $(`<div class="row"><button class="btn alt" id="show">👀 看答案 + 🔊</button></div>`);
+      box.appendChild(r);
+      r.querySelector("#show").onclick=()=>{
+        c.querySelector("#ans").style.visibility="visible";
+        c.insertBefore($(`<img class="pic" src="${w.img}">`), c.firstChild);
+        speak(w.en);
+        r.innerHTML="";
+        const ok=$(`<button class="btn ok">✔ 唸對了</button>`), no=$(`<button class="btn no">✘ 還要練</button>`);
+        ok.onclick=()=>{score++;mark(w.en,true);i++;draw();};
+        no.onclick=()=>{mark(w.en,false);i++;draw();};
+        r.append(ok,no);
+      };
+    }
+    draw();
+  },
+
+  spell(){
+    let list = order(), i = 0, score=0;
+    app.appendChild($(`<p class="hint">看圖和中文，把英文拼出來。不會的話按「提示」看第一個字母。</p>`));
+    const box = $(`<div></div>`); app.appendChild(box);
+    function draw(){
+      if(i>=list.length){ box.innerHTML=""; finish(`拼對 ${score} / ${list.length} 個`); return; }
+      const w = list[i]; box.innerHTML=""; let hints=0, missed=false;
+      box.appendChild($(`<div class="card"><img class="pic" src="${w.img}"><div class="zh" style="padding:12px;font-size:22px;color:var(--ink)">${w.zh}</div></div>`));
+      box.appendChild($(`<div class="prog">${i+1} / ${list.length}</div>`));
+      const inp = $(`<input class="spell" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="在這裡拼…">`);
+      box.appendChild(inp);
+      const fb = $(`<div class="fb"></div>`); box.appendChild(fb);
+      const r = $(`<div class="row"><button class="btn alt" id="h">💡 提示</button><button class="btn" id="c">檢查</button></div>`);
+      box.appendChild(r);
+      const check=()=>{
+        if(norm(inp.value)===norm(w.en)){
+          if(!missed){score++;mark(w.en,true);}
+          fb.className="fb good"; fb.textContent="✔ 拼對了！"; speak(w.en);
+          setTimeout(()=>{i++;draw();},1100);
+        }else{
+          if(!missed) mark(w.en,false); missed=true;
+          fb.className="fb bad"; fb.textContent="差一點，再檢查一下 ✏️";
+        }
+      };
+      r.querySelector("#c").onclick=check;
+      inp.onkeydown=e=>{ if(e.key==="Enter") check(); };
+      r.querySelector("#h").onclick=()=>{
+        hints++; missed=true;
+        const show = w.en.split(" ").map(p=>p.slice(0,hints)+ "_".repeat(Math.max(0,p.length-hints))).join("  ");
+        fb.className="fb"; fb.textContent=show;
+        if(hints>=3){ r.appendChild(Object.assign($(`<button class="btn alt">看答案</button>`),{onclick(){fb.textContent=w.en;speak(w.en);}})); }
+      };
+      inp.focus();
+    }
+    draw();
+  },
+
+  train(){
+    let list = shuffle(S()).slice(0, isTest()?8:99), i = 0, score=0;
+    app.appendChild($(`<p class="hint">把車廂（單字）依順序點上火車，排成正確的句子。點火車上的車廂可以拆回來。</p>`));
+    const box = $(`<div></div>`); app.appendChild(box);
+    function draw(){
+      if(i>=list.length){ box.innerHTML=""; finish(`排對 ${score} / ${list.length} 句`); return; }
+      const x = list[i], sent = x.en, parts = sent.split(" ");
+      box.innerHTML=""; let missed=false;
+      const pic = x.img ? `<img src="${x.img}" style="width:110px;height:74px;object-fit:cover;border-radius:10px">` : `<div style="font-size:44px;width:110px;text-align:center">💬</div>`;
+      box.appendChild($(`<div class="card" style="display:flex;align-items:center;gap:10px;padding:8px">${pic}<div style="font-size:18px">${x.zh}</div></div>`));
+      box.appendChild($(`<div class="prog">${i+1} / ${list.length}</div>`));
+      const tr = $(`<div class="train"><span class="engine">🚂</span></div>`);
+      const pool = $(`<div class="train pool"></div>`);
+      box.append(tr, $(`<div style="height:10px"></div>`), pool);
+      const fb = $(`<div class="fb"></div>`); box.appendChild(fb);
+      const r = $(`<div class="row"><button class="btn alt" id="l">🔊 聽整句</button><button class="btn" id="c">檢查</button></div>`);
+      box.appendChild(r);
+      let sh = shuffle(parts); if(parts.length>1) while(sh.join(" ")===sent) sh = shuffle(parts);
+      sh.forEach(p=>{
+        const b = $(`<button class="car"></button>`); b.textContent=p;
+        b.onclick=()=>{ (b.parentElement===pool?tr:pool).appendChild(b); fb.textContent=""; };
+        pool.appendChild(b);
+      });
+      r.querySelector("#l").onclick=()=>speak(sent);
+      r.querySelector("#c").onclick=()=>{
+        const got=[...tr.querySelectorAll(".car")].map(b=>b.textContent).join(" ");
+        if(got===sent){
+          if(!missed){score++; if(x.w) mark(x.w,true);}
+          fb.className="fb good"; fb.textContent="✔ 火車開動囉！"; speak(sent);
+          setTimeout(()=>{i++;draw();},1500);
+        }else{
+          if(!missed && x.w) mark(x.w,false);
+          missed=true; fb.className="fb bad";
+          fb.textContent = pool.children.length ? "還有車廂沒上車喔！" : "順序再調整一下 🔄";
+        }
+      };
+    }
+    draw();
+  },
+
+  dict(){
+    const list = order();
+    app.appendChild($(`<p class="hint">家長唸，孩子寫在紙上。可以自己唸，也可以按 🔊 讓手機唸。寫完再一起對答案。</p>`));
+    const sec = (title, items) => {
+      app.appendChild($(`<h3 style="margin:16px 0 8px">${title}</h3>`));
+      const l = $(`<div class="list"></div>`);
+      items.forEach((t,k)=>{
+        const it = $(`<div class="li"><span style="width:24px;text-align:center;color:var(--muted)">${k+1}</span><b class="ans" style="filter:blur(6px)">${t}</b><button class="btn alt" style="padding:8px 12px">🔊</button></div>`);
+        it.querySelector("button").onclick=()=>speak(t);
+        l.appendChild(it);
+      });
+      app.appendChild(l);
+    };
+    if(list.length) sec("單字", list.slice(0,isTest()?8:5).map(w=>w.en));
+    if(S().length) sec("句子", shuffle(S()).slice(0,isTest()?5:3).map(x=>x.en));
+    const b = $(`<div class="row"><button class="btn">👀 顯示答案</button><button class="btn alt">🔀 換一組</button></div>`);
+    b.children[0].onclick=()=>document.querySelectorAll(".ans").forEach(e=>e.style.filter="none");
+    b.children[1].onclick=()=>go("dict");
+    app.appendChild(b);
+  },
+
+  status(){
+    app.appendChild($(`<p class="hint">這裡顯示目前選的範圍。做錯的單字會標成「還要練」，下次練習時會排在前面。</p>`));
+    const l = $(`<div class="list"></div>`);
+    [...W()].sort((a,b)=>(weak[b.en]||0)-(weak[a.en]||0)).forEach(w=>{
+      const n = weak[w.en]||0;
+      l.appendChild($(`<div class="li"><img src="${w.img}"><b>${w.en}<br><span style="font-weight:400;font-size:14px;color:var(--muted)">${w.zh}</span></b><span class="tag ${n?"":"okk"}">${n?"還要練":"OK"}</span></div>`));
+    });
+    app.appendChild(l);
+    const r = $(`<div class="row"><button class="btn alt">清除紀錄</button></div>`);
+    r.firstElementChild.onclick=()=>{ weak={}; try{localStorage.removeItem("ss4-weak");}catch(e){} go("status"); };
+    app.appendChild(r);
+    app.appendChild($(`<div class="note">📌 範圍依課本 Scope &amp; Sequence。Lesson 1 是課本對話原句；Lesson 2–3 的句子是依課本句型組的練習句，課本課文可能用不同的人物或單字。Phonics 只有單字，沒有句子火車。<br>🔊 手機唸的發音只是輔助，考試請以課本音檔為準。</div>`));
+  }
+};
+
+go("cards");
+</script>
+</body>
+</html>
