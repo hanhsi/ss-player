@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Super Star Level 1 洗耳朵播放器</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Font: Inter & Noto Sans TC -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '"Noto Sans TC"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+          },
+          colors: {
+            canvas: '#F7F8FC',
+            primary: '#3B82F6',
+            warm: '#F59E0B',
+            coral: '#FB7185',
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    /* Base touch & typography polish */
+    html, body {
+      background-color: #F7F8FC;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior-y: contain;
+    }
+
+    /* Custom seekable range slider styling */
+    input[type="range"].audio-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 8px;
+      border-radius: 9999px;
+      background: #E2E8F0;
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"].audio-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 9999px;
+      background: #3B82F6;
+      border: 3px solid #FFFFFF;
+      box-shadow: 0 2px 6px rgba(59, 130, 246, 0.45);
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+
+    input[type="range"].audio-slider::-webkit-slider-thumb:active {
+      transform: scale(1.2);
+    }
+
+    input[type="range"].audio-slider::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 9999px;
+      background: #3B82F6;
+      border: 3px solid #FFFFFF;
+      box-shadow: 0 2px 6px rgba(59, 130, 246, 0.45);
+      cursor: pointer;
+    }
+
+    /* Subtle spinning animation for buffering */
+    @keyframes spinSlow {
+      to { transform: rotate(360deg); }
+    }
+    .animate-spin-fast {
+      animation: spinSlow 0.8s linear infinite;
+    }
+
+    /* Hide scrollbar for clean playlist feel */
+    .playlist-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .playlist-scroll::-webkit-scrollbar-thumb {
+      background-color: #CBD5E1;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="font-sans text-slate-800 antialiased min-h-screen pb-14">
+
+  <!-- Main Single-Column Mobile Container -->
+  <div class="w-full max-w-[560px] mx-auto px-3.5 sm:px-5 pt-3 sm:pt-5 space-y-4">
+
+    <!-- Top App Title Bar -->
+    <header class="flex items-center justify-between px-1">
+      <div class="flex items-center gap-2.5">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 text-white flex items-center justify-center shadow-md shadow-blue-500/20 text-xl">
+          🎧
+        </div>
+        <div>
+          <h1 class="text-lg font-extrabold tracking-tight text-slate-900 leading-tight">
+            Super Star Level 1
+          </h1>
+          <p class="text-xs font-medium text-slate-500">
+            洗耳朵循環播放器 · 手機 / 藍牙 / 車用
+          </p>
+        </div>
+      </div>
+      <!-- Active Sleep Timer Pill in Header (only visible when timer active) -->
+      <div id="headerTimerBadge" class="hidden items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-100 text-amber-800 text-xs font-bold border border-amber-200 shadow-sm">
+        <span>🌙</span>
+        <span id="headerTimerText">剩餘 00:00</span>
+      </div>
+    </header>
+
+    <!-- =========================================================
+         1. Sticky / Prominent Now-Playing Card
+    ========================================================== -->
+    <section id="nowPlayingCard" class="sticky top-2.5 z-30 bg-white/95 backdrop-blur-md rounded-3xl shadow-lg shadow-slate-200/70 border border-slate-100 p-4 sm:p-5 transition-all">
+      
+      <!-- Track Info Row -->
+      <div class="flex items-start justify-between gap-2 mb-3">
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center flex-wrap gap-1.5 mb-1">
+            <span id="nowUnitBadge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-600 border border-blue-100">
+              Unit 1
+            </span>
+            <span id="repeatProgressBadge" class="hidden inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+              第 1/2 遍
+            </span>
+            <span id="gapStatusBadge" class="hidden inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-600 border border-rose-200">
+              曲間停頓中...
+            </span>
+          </div>
+          <h2 id="nowTrackTitle" class="text-lg sm:text-xl font-extrabold text-slate-900 truncate">
+            CD1-03 (第 1/15 軌)
+          </h2>
+          <p id="nowQueueMeta" class="text-xs font-medium text-slate-400 mt-0.5">
+            播放清單第 1 / 30 首
+          </p>
+        </div>
+
+        <!-- Buffering Spinner -->
+        <div id="loadingIndicator" class="hidden items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold shrink-0">
+          <svg class="w-3.5 h-3.5 text-blue-500 animate-spin-fast" viewBox="0 0 24 24" fill="none">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-85" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+          </svg>
+          <span>載入中</span>
+        </div>
+      </div>
+
+      <!-- Inline Error Banner (Hidden unless load fails) -->
+      <div id="errorBanner" class="hidden mb-3 px-3 py-2 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center justify-between gap-2">
+        <span id="errorMessage">音檔載入失敗，請檢查網路連線。</span>
+        <button id="errorSkipBtn" type="button" class="shrink-0 px-2.5 py-1 rounded-xl bg-rose-500 text-white font-bold active:scale-95 transition">
+          略過這首
+        </button>
+      </div>
+
+      <!-- Seekable Progress Bar -->
+      <div class="mb-4">
+        <input
+          id="progressSlider"
+          type="range"
+          min="0"
+          max="100"
+          step="0.1"
+          value="0"
+          aria-label="播放進度"
+          class="audio-slider"
+        />
+        <div class="flex items-center justify-between text-xs font-semibold text-slate-400 mt-1.5 tabular-nums">
+          <span id="currentTimeLabel">00:00</span>
+          <span id="totalTimeLabel">00:00</span>
+        </div>
+      </div>
+
+      <!-- Main Playback Controls -->
+      <div class="flex items-center justify-center gap-6 sm:gap-8 mb-4">
+        <!-- Previous Track -->
+        <button
+          id="prevBtn"
+          type="button"
+          aria-label="上一首"
+          class="w-14 h-14 rounded-2xl bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 flex items-center justify-center transition shadow-sm"
+        >
+          <svg class="w-7 h-7" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
+          </svg>
+        </button>
+
+        <!-- Play / Pause (Prominent Circular Button) -->
+        <button
+          id="playPauseBtn"
+          type="button"
+          aria-label="播放或暫停"
+          class="w-18 h-18 w-[72px] h-[72px] rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-blue-500/35 transition"
+        >
+          <!-- Play Icon -->
+          <svg id="playIcon" class="w-9 h-9 ml-1" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+          <!-- Pause Icon -->
+          <svg id="pauseIcon" class="w-9 h-9 hidden" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+          </svg>
+        </button>
+
+        <!-- Next Track -->
+        <button
+          id="nextBtn"
+          type="button"
+          aria-label="下一首"
+          class="w-14 h-14 rounded-2xl bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 flex items-center justify-center transition shadow-sm"
+        >
+          <svg class="w-7 h-7" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Quick Control Pills -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        <!-- Per-track Repeat -->
+        <button id="repeatBtn" type="button" class="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-2xl bg-slate-50 hover:bg-blue-50 border border-slate-200 text-xs font-bold text-slate-700 active:scale-95 transition">
+          <span>🔁</span>
+          <span id="repeatBtnText">播 1 遍</span>
+        </button>
+
+        <!-- Order / Shuffle -->
+        <button id="orderBtn" type="button" class="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-2xl bg-slate-50 hover:bg-blue-50 border border-slate-200 text-xs font-bold text-slate-700 active:scale-95 transition">
+          <span id="orderBtnIcon">➡️</span>
+          <span id="orderBtnText">順序循環</span>
+        </button>
+
+        <!-- Speed -->
+        <button id="speedBtn" type="button" class="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-2xl bg-slate-50 hover:bg-blue-50 border border-slate-200 text-xs font-bold text-slate-700 active:scale-95 transition">
+          <span>⚡</span>
+          <span id="speedBtnText">語速 1.0x</span>
+        </button>
+
+        <!-- Gap Between Tracks -->
+        <button id="gapBtn" type="button" class="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-2xl bg-slate-50 hover:bg-blue-50 border border-slate-200 text-xs font-bold text-slate-700 active:scale-95 transition">
+          <span>⏱️</span>
+          <span id="gapBtnText">無停頓</span>
+        </button>
+
+        <!-- Sleep Timer -->
+        <button id="timerBtn" type="button" class="col-span-2 sm:col-span-2 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-2xl bg-slate-50 hover:bg-amber-50 border border-slate-200 text-xs font-bold text-slate-700 active:scale-95 transition">
+          <span>🌙</span>
+          <span id="timerBtnText">定時關閉：關閉</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         2. Multi-Unit Selection Panel ("選擇洗耳朵範圍")
+    ========================================================== -->
+    <section class="bg-white rounded-3xl shadow-sm border border-slate-100 p-4 sm:p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+          <span>📚</span>
+          <span>選擇洗耳朵範圍</span>
+        </h2>
+        <span id="selectedUnitsSummary" class="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">
+          已選 2 單元
+        </span>
+      </div>
+
+      <!-- Quick Preset Buttons -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+        <button id="presetAllBtn" type="button" class="py-2 px-2.5 rounded-xl bg-slate-100 hover:bg-blue-100 hover:text-blue-700 text-slate-700 text-xs font-bold active:scale-95 transition">
+          全選
+        </button>
+        <button id="presetCD1Btn" type="button" class="py-2 px-2.5 rounded-xl bg-slate-100 hover:bg-blue-100 hover:text-blue-700 text-slate-700 text-xs font-bold active:scale-95 transition">
+          只選 CD1 (U1-4)
+        </button>
+        <button id="presetCD2Btn" type="button" class="py-2 px-2.5 rounded-xl bg-slate-100 hover:bg-blue-100 hover:text-blue-700 text-slate-700 text-xs font-bold active:scale-95 transition">
+          只選 CD2 (U5-8)
+        </button>
+        <button id="presetClearBtn" type="button" class="py-2 px-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold active:scale-95 transition">
+          清空
+        </button>
+      </div>
+
+      <!-- Toggle Switch: Skip Unit Tests & Progress Tests -->
+      <label for="skipTestsToggle" class="flex items-center justify-between gap-3 p-3 mb-4 rounded-2xl bg-amber-50/80 border border-amber-200/80 cursor-pointer select-none">
+        <div class="min-w-0">
+          <div class="text-sm font-bold text-amber-950">跳過每單元最後 3 軌測驗題</div>
+          <div class="text-xs text-amber-700/90 mt-0.5">自動略過 Unit 1–8 的 Unit Test 及 Progress Test，洗耳朵更流暢</div>
+        </div>
+        <div class="relative inline-flex items-center shrink-0">
+          <input id="skipTestsToggle" type="checkbox" class="sr-only peer" />
+          <div class="w-12 h-7 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-6 after:w-6 after:shadow-sm after:transition-all peer-checked:bg-amber-500"></div>
+        </div>
+      </label>
+
+      <!-- Unit Chips Grid -->
+      <div id="unitGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+        <!-- Dynamically rendered by JS -->
+      </div>
+    </section>
+
+    <!-- =========================================================
+         3. Expandable Active Playlist ("目前播放清單")
+    ========================================================== -->
+    <section class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+      <div class="flex items-center justify-between p-4 sm:p-5">
+        <button id="playlistToggleBtn" type="button" class="flex-1 flex items-center justify-between text-left gap-2">
+          <div class="flex items-center gap-2">
+            <span class="text-base">🎵</span>
+            <span class="text-base font-extrabold text-slate-900">目前播放清單</span>
+            <span id="playlistCountBadge" class="text-xs font-bold bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-full">
+              0 首
+            </span>
+          </div>
+          <svg id="playlistChevron" class="w-5 h-5 text-slate-400 transition-transform duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Expandable Body -->
+      <div id="playlistBody" class="hidden border-t border-slate-100">
+        <div class="flex items-center justify-between px-4 py-2 bg-slate-50/80 border-b border-slate-100">
+          <span class="text-xs font-medium text-slate-500">點選任一音軌立即播放</span>
+          <button id="scrollToCurrentBtn" type="button" class="text-xs font-bold text-blue-600 hover:text-blue-700 px-2.5 py-1 rounded-lg bg-blue-50 active:scale-95 transition">
+            定位目前曲目
+          </button>
+        </div>
+        <div id="playlistList" class="max-h-80 overflow-y-auto playlist-scroll divide-y divide-slate-100">
+          <!-- Dynamically rendered by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer Tip -->
+    <footer class="text-center text-xs text-slate-400 px-4 pt-1 pb-4 leading-relaxed">
+      提示：支援手機鎖屏、藍牙喇叭與車用音響控制上一首／下一首。<br />
+      設定會自動儲存在本機，下次打開直接繼續洗耳朵！
+    </footer>
+  </div>
+
+  <!-- Toast Notification (No alert/confirm) -->
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 translate-y-20 opacity-0 pointer-events-none z-50 bg-slate-900/95 text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-full shadow-xl transition-all duration-300 whitespace-nowrap max-w-[90vw] truncate">
+  </div>
+
+  <!-- Hidden HTML5 Audio Element -->
+  <audio id="audioPlayer" preload="metadata" playsinline></audio>
+
+  <script>
+    (function () {
+      'use strict';
+
+      /* =========================================================
+         Exact Audio Catalog Data (Verbatim)
+      ========================================================== */
+      const AUDIO_CATALOG = [
+        {"unit": "Title Song", "tracks": ["https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-02.mp3"]},
+        {"unit": "Unit 1", "tracks": ["https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-03.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-04.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-05.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-06.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-07.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-08.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-09.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-10.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-11.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-12.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-13.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-14.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-15.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-16.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-17.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-18.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-19.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-20.mp3"]},
+        {"unit": "Unit 2", "tracks": ["https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-21.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-22.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-23.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-24.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-25.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-26.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-27.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-28.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-29.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-30.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-31.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-32.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-33.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-34.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-35.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-36.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-37.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-38.mp3"]},
+        {"unit": "Phonics 1", "tracks": ["https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-39.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-40.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-41.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-42.mp3"]},
+        {"unit": "Unit 3", "tracks": ["https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-43.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-44.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-45.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-46.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-47.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-48.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-49.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-50.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-51.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-52.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-53.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-54.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-55.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-56.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-57.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-58.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-59.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-60.mp3"]},
+        {"unit": "Unit 4", "tracks": ["https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-61.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-62.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-63.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-64.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-65.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-66.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-67.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-68.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-69.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-70.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-71.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-72.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-73.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-74.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-75.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-76.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-77.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-78.mp3"]},
+        {"unit": "Phonics 2", "tracks": ["https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-79.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-80.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-81.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-82.mp3"]},
+        {"unit": "Unit 5", "tracks": ["https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-03.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-04.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-05.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-06.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-07.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-08.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-09.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-10.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-11.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-12.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-13.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-14.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-15.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-16.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-17.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-18.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-19.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-20.mp3"]},
+        {"unit": "Unit 6", "tracks": ["https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-21.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-22.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-23.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-24.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-25.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-26.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-27.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-28.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-29.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-30.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-31.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-32.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-33.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-34.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-35.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-36.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-37.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-38.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-39.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-40.mp3"]},
+        {"unit": "Phonics 3", "tracks": ["https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-41.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-42.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-43.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-44.mp3"]},
+        {"unit": "Unit 7", "tracks": ["https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-45.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-46.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-47.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-48.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-49.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-50.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-51.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-52.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-53.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-54.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-55.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-56.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-57.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-58.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-59.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-60.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-61.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-62.mp3"]},
+        {"unit": "Unit 8", "tracks": ["https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-63.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-64.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-65.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-66.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-67.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-68.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-69.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-70.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-71.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-72.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-73.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-74.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-75.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-76.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-77.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-78.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-79.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-80.mp3"]},
+        {"unit": "Phonics 4", "tracks": ["https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-81.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-82.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-83.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-84.mp3"]},
+        {"unit": "Progress Test 1", "tracks": ["https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-83.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-84.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-85.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD1/CD1-86.mp3"]},
+        {"unit": "Progress Test 2", "tracks": ["https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-85.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-86.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-87.mp3","https://www.alist.co.kr/SS/data/audio/SS_SB1/CD2/CD2-88.mp3"]}
+      ];
+
+      /* =========================================================
+         Configuration & Storage Constants
+      ========================================================== */
+      const STORAGE_KEY = 'ss_level1_ear_player_v1';
+      const REPEAT_OPTIONS = [
+        { value: 1, label: '播 1 遍' },
+        { value: 2, label: '播 2 遍' },
+        { value: 3, label: '播 3 遍' },
+        { value: Infinity, label: '單曲無限循環' }
+      ];
+      const SPEED_OPTIONS = [0.8, 0.9, 1.0, 1.15];
+      const GAP_OPTIONS = [
+        { value: 0, label: '無停頓' },
+        { value: 1.5, label: '停頓 1.5 秒' },
+        { value: 3, label: '停頓 3 秒' }
+      ];
+      const TIMER_OPTIONS = [0, 10, 15, 30, 45]; // minutes
+
+      const CD1_UNITS = ['Title Song', 'Unit 1', 'Unit 2', 'Phonics 1', 'Unit 3', 'Unit 4', 'Phonics 2', 'Progress Test 1'];
+      const CD2_UNITS = ['Unit 5', 'Unit 6', 'Phonics 3', 'Unit 7', 'Unit 8', 'Phonics 4', 'Progress Test 2'];
+
+      /* =========================================================
+         Application State
+      ========================================================== */
+      let state = {
+        selectedUnits: ['Unit 1', 'Unit 2'],
+        skipTests: false,
+        repeatIndex: 0,        // index in REPEAT_OPTIONS
+        shuffle: false,        // false = 順序循環, true = 隨機循環
+        speedIndex: 2,         // 1.0x
+        gapIndex: 0,           // 0s
+        timerOptionIndex: 0,   // 0 = off
+        playlistExpanded: false
+      };
+
+      let activeQueue = [];    // [{ url, code, unit, unitTrackNum, unitTrackTotal }]
+      let currentIndex = 0;
+      let currentRepeatCount = 1;
+      let isPlaying = false;
+      let isSeeking = false;
+      let gapTimerId = null;
+      let sleepIntervalId = null;
+      let sleepEndTime = null;
+      let toastTimerId = null;
+
+      /* =========================================================
+         DOM Elements
+      ========================================================== */
+      const audio = document.getElementById('audioPlayer');
+      const nowUnitBadge = document.getElementById('nowUnitBadge');
+      const repeatProgressBadge = document.getElementById('repeatProgressBadge');
+      const gapStatusBadge = document.getElementById('gapStatusBadge');
+      const nowTrackTitle = document.getElementById('nowTrackTitle');
+      const nowQueueMeta = document.getElementById('nowQueueMeta');
+      const loadingIndicator = document.getElementById('loadingIndicator');
+      const errorBanner = document.getElementById('errorBanner');
+      const errorMessage = document.getElementById('errorMessage');
+      const errorSkipBtn = document.getElementById('errorSkipBtn');
+
+      const progressSlider = document.getElementById('progressSlider');
+      const currentTimeLabel = document.getElementById('currentTimeLabel');
+      const totalTimeLabel = document.getElementById('totalTimeLabel');
+
+      const prevBtn = document.getElementById('prevBtn');
+      const playPauseBtn = document.getElementById('playPauseBtn');
+      const playIcon = document.getElementById('playIcon');
+      const pauseIcon = document.getElementById('pauseIcon');
+      const nextBtn = document.getElementById('nextBtn');
+
+      const repeatBtn = document.getElementById('repeatBtn');
+      const repeatBtnText = document.getElementById('repeatBtnText');
+      const orderBtn = document.getElementById('orderBtn');
+      const orderBtnIcon = document.getElementById('orderBtnIcon');
+      const orderBtnText = document.getElementById('orderBtnText');
+      const speedBtn = document.getElementById('speedBtn');
+      const speedBtnText = document.getElementById('speedBtnText');
+      const gapBtn = document.getElementById('gapBtn');
+      const gapBtnText = document.getElementById('gapBtnText');
+      const timerBtn = document.getElementById('timerBtn');
+      const timerBtnText = document.getElementById('timerBtnText');
+      const headerTimerBadge = document.getElementById('headerTimerBadge');
+      const headerTimerText = document.getElementById('headerTimerText');
+
+      const selectedUnitsSummary = document.getElementById('selectedUnitsSummary');
+      const presetAllBtn = document.getElementById('presetAllBtn');
+      const presetCD1Btn = document.getElementById('presetCD1Btn');
+      const presetCD2Btn = document.getElementById('presetCD2Btn');
+      const presetClearBtn = document.getElementById('presetClearBtn');
+      const skipTestsToggle = document.getElementById('skipTestsToggle');
+      const unitGrid = document.getElementById('unitGrid');
+
+      const playlistToggleBtn = document.getElementById('playlistToggleBtn');
+      const playlistChevron = document.getElementById('playlistChevron');
+      const playlistCountBadge = document.getElementById('playlistCountBadge');
+      const playlistBody = document.getElementById('playlistBody');
+      const playlistList = document.getElementById('playlistList');
+      const scrollToCurrentBtn = document.getElementById('scrollToCurrentBtn');
+      const toastEl = document.getElementById('toast');
+
+      /* =========================================================
+         Helpers
+      ========================================================== */
+      function formatTime(sec) {
+        if (!Number.isFinite(sec) || sec < 0) return '00:00';
+        const m = Math.floor(sec / 60);
+        const s = Math.floor(sec % 60);
+        return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+      }
+
+      function extractTrackCode(url) {
+        const match = url.match(/([^/]+)\.mp3$/i);
+        return match ? match[1] : 'Track';
+      }
+
+      function isRegularUnit(unitName) {
+        return /^Unit\s+[1-8]$/.test(unitName);
+      }
+
+      function isProgressTest(unitName) {
+        return /^Progress Test\s+[12]$/.test(unitName);
+      }
+
+      function getFilteredTracksForUnit(unitObj, skipTests) {
+        if (!skipTests) return unitObj.tracks;
+        if (isProgressTest(unitObj.unit)) return [];
+        if (isRegularUnit(unitObj.unit) && unitObj.tracks.length > 3) {
+          return unitObj.tracks.slice(0, unitObj.tracks.length - 3);
+        }
+        return unitObj.tracks;
+      }
+
+      function showToast(msg) {
+        toastEl.textContent = msg;
+        toastEl.classList.remove('translate-y-20', 'opacity-0');
+        toastEl.classList.add('translate-y-0', 'opacity-100');
+        if (toastTimerId) clearTimeout(toastTimerId);
+        toastTimerId = setTimeout(() => {
+          toastEl.classList.remove('translate-y-0', 'opacity-100');
+          toastEl.classList.add('translate-y-20', 'opacity-0');
+        }, 2200);
+      }
+
+      function showError(msg) {
+        errorMessage.textContent = msg;
+        errorBanner.classList.remove('hidden');
+      }
+
+      function hideError() {
+        errorBanner.classList.add('hidden');
+      }
+
+      function setLoading(loading) {
+        if (loading) {
+          loadingIndicator.classList.remove('hidden');
+          loadingIndicator.classList.add('flex');
+        } else {
+          loadingIndicator.classList.add('hidden');
+          loadingIndicator.classList.remove('flex');
+        }
+      }
+
+      /* =========================================================
+         LocalStorage Persistence
+      ========================================================== */
+      function loadPreferences() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return;
+          const saved = JSON.parse(raw);
+          if (Array.isArray(saved.selectedUnits)) {
+            const validNames = new Set(AUDIO_CATALOG.map(u => u.unit));
+            state.selectedUnits = saved.selectedUnits.filter(name => validNames.has(name));
+          }
+          if (typeof saved.skipTests === 'boolean') state.skipTests = saved.skipTests;
+          if (typeof saved.repeatIndex === 'number' && REPEAT_OPTIONS[saved.repeatIndex]) state.repeatIndex = saved.repeatIndex;
+          if (typeof saved.shuffle === 'boolean') state.shuffle = saved.shuffle;
+          if (typeof saved.speedIndex === 'number' && SPEED_OPTIONS[saved.speedIndex]) state.speedIndex = saved.speedIndex;
+          if (typeof saved.gapIndex === 'number' && GAP_OPTIONS[saved.gapIndex]) state.gapIndex = saved.gapIndex;
+        } catch (e) {
+          // Ignore storage errors on restricted browsers
+        }
+      }
+
+      function savePreferences() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            selectedUnits: state.selectedUnits,
+            skipTests: state.skipTests,
+            repeatIndex: state.repeatIndex,
+            shuffle: state.shuffle,
+            speedIndex: state.speedIndex,
+            gapIndex: state.gapIndex
+          }));
+        } catch (e) {
+          // Ignore storage quota / privacy errors
+        }
+      }
+
+      /* =========================================================
+         Queue Builder (Dynamic Update Without Jarring Reloads)
+      ========================================================== */
+      function rebuildQueue(preserveCurrentTrack) {
+        const prevTrackUrl = (preserveCurrentTrack && activeQueue[currentIndex]) ? activeQueue[currentIndex].url : null;
+        const selectedSet = new Set(state.selectedUnits);
+        const nextQueue = [];
+
+        AUDIO_CATALOG.forEach(unitObj => {
+          if (!selectedSet.has(unitObj.unit)) return;
+          const filtered = getFilteredTracksForUnit(unitObj, state.skipTests);
+          filtered.forEach((url, idx) => {
+            nextQueue.push({
+              url: url,
+              code: extractTrackCode(url),
+              unit: unitObj.unit,
+              unitTrackNum: idx + 1,
+              unitTrackTotal: filtered.length
+            });
+          });
+        });
+
+        activeQueue = nextQueue;
+
+        if (activeQueue.length === 0) {
+          clearGapTimer();
+          audio.pause();
+          audio.removeAttribute('src');
+          isPlaying = false;
+          currentIndex = 0;
+          currentRepeatCount = 1;
+          updatePlaybackButtons();
+          updateNowPlayingUI();
+          renderPlaylist();
+          return;
+        }
+
+        if (prevTrackUrl) {
+          const foundIdx = activeQueue.findIndex(t => t.url === prevTrackUrl);
+          if (foundIdx !== -1) {
+            currentIndex = foundIdx;
+            updateNowPlayingUI();
+            renderPlaylist();
+            return;
+          }
+        }
+
+        // Previous track no longer in queue -> switch cleanly to index 0
+        currentIndex = 0;
+        currentRepeatCount = 1;
+        loadTrack(currentIndex, isPlaying);
+        renderPlaylist();
+      }
+
+      /* =========================================================
+         Core Audio Playback Control
+      ========================================================== */
+      function clearGapTimer() {
+        if (gapTimerId) {
+          clearTimeout(gapTimerId);
+          gapTimerId = null;
+        }
+        gapStatusBadge.classList.add('hidden');
+      }
+
+      function applyPlaybackSpeed() {
+        const rate = SPEED_OPTIONS[state.speedIndex];
+        try {
+          audio.playbackRate = rate;
+        } catch (e) {
+          // Fallback safely
+        }
+      }
+
+      function loadTrack(index, autoPlay) {
+        clearGapTimer();
+        hideError();
+
+        if (!activeQueue.length) {
+          updateNowPlayingUI();
+          return;
+        }
+
+        currentIndex = ((index % activeQueue.length) + activeQueue.length) % activeQueue.length;
+        const track = activeQueue[currentIndex];
+
+        setLoading(true);
+        progressSlider.value = 0;
+        currentTimeLabel.textContent = '00:00';
+        totalTimeLabel.textContent = '00:00';
+
+        audio.src = track.url;
+        audio.load();
+        applyPlaybackSpeed();
+
+        updateNowPlayingUI();
+        updateMediaSession(track);
+        highlightActivePlaylistItem();
+
+        if (autoPlay) {
+          const playPromise = audio.play();
+          if (playPromise && typeof playPromise.then === 'function') {
+            playPromise.then(() => {
+              isPlaying = true;
+              applyPlaybackSpeed();
+              updatePlaybackButtons();
+            }).catch(() => {
+              isPlaying = false;
+              setLoading(false);
+              updatePlaybackButtons();
+            });
+          }
+        } else {
+          isPlaying = false;
+          updatePlaybackButtons();
+        }
+      }
+
+      function togglePlayPause() {
+        if (!activeQueue.length) {
+          showToast('請先在下方選擇至少一個單元喔！');
+          return;
+        }
+
+        clearGapTimer();
+        hideError();
+
+        if (isPlaying && !audio.paused) {
+          audio.pause();
+          isPlaying = false;
+          updatePlaybackButtons();
+        } else {
+          // If no src loaded yet, load current track
+          if (!audio.getAttribute('src')) {
+            loadTrack(currentIndex, true);
+            return;
+          }
+          const playPromise = audio.play();
+          if (playPromise && typeof playPromise.then === 'function') {
+            playPromise.then(() => {
+              isPlaying = true;
+              applyPlaybackSpeed();
+              updatePlaybackButtons();
+            }).catch(() => {
+              isPlaying = false;
+              updatePlaybackButtons();
+              showError('無法自動播放，請再按一次播放鍵。');
+            });
+          }
+        }
+      }
+
+      function getNextIndex() {
+        if (activeQueue.length <= 1) return 0;
+        if (state.shuffle) {
+          let nextIdx = currentIndex;
+          while (nextIdx === currentIndex) {
+            nextIdx = Math.floor(Math.random() * activeQueue.length);
+          }
+          return nextIdx;
+        }
+        return (currentIndex + 1) % activeQueue.length;
+      }
+
+      function playNextTrack(autoPlay = true) {
+        if (!activeQueue.length) return;
+        currentRepeatCount = 1;
+        loadTrack(getNextIndex(), autoPlay);
+      }
+
+      function playPrevTrack(autoPlay = true) {
+        if (!activeQueue.length) return;
+        // If current track played > 3 seconds, restart current track first
+        if (audio.currentTime > 3) {
+          audio.currentTime = 0;
+          if (autoPlay && audio.paused) audio.play().catch(() => {});
+          return;
+        }
+        currentRepeatCount = 1;
+        const prevIdx = (currentIndex - 1 + activeQueue.length) % activeQueue.length;
+        loadTrack(prevIdx, autoPlay);
+      }
+
+      function handleTrackEnded() {
+        if (!activeQueue.length) return;
+        const repeatTarget = REPEAT_OPTIONS[state.repeatIndex].value;
+        const gapSec = GAP_OPTIONS[state.gapIndex].value;
+
+        const shouldRepeatSame = (repeatTarget === Infinity) || (currentRepeatCount < repeatTarget);
+
+        const proceed = () => {
+          gapStatusBadge.classList.add('hidden');
+          if (!isPlaying) return;
+
+          if (shouldRepeatSame) {
+            if (repeatTarget !== Infinity) currentRepeatCount++;
+            updateNowPlayingUI();
+            audio.currentTime = 0;
+            applyPlaybackSpeed();
+            audio.play().catch(() => {
+              isPlaying = false;
+              updatePlaybackButtons();
+            });
+          } else {
+            currentRepeatCount = 1;
+            loadTrack(getNextIndex(), true);
+          }
+        };
+
+        if (gapSec > 0) {
+          gapStatusBadge.textContent = `停頓 ${gapSec} 秒...`;
+          gapStatusBadge.classList.remove('hidden');
+          gapTimerId = setTimeout(proceed, gapSec * 1000);
+        } else {
+          proceed();
+        }
+      }
+
+      /* =========================================================
+         Sleep Timer Logic
+      ========================================================== */
+      function clearSleepTimer() {
+        if (sleepIntervalId) {
+          clearInterval(sleepIntervalId);
+          sleepIntervalId = null;
+        }
+        sleepEndTime = null;
+        headerTimerBadge.classList.add('hidden');
+        headerTimerBadge.classList.remove('flex');
+      }
+
+      function updateSleepTimerDisplay() {
+        if (!sleepEndTime) {
+          timerBtnText.textContent = '定時關閉：關閉';
+          timerBtn.classList.remove('bg-amber-50', 'border-amber-300', 'text-amber-800');
+          headerTimerBadge.classList.add('hidden');
+          headerTimerBadge.classList.remove('flex');
+          return;
+        }
+
+        const remainingSec = Math.max(0, Math.ceil((sleepEndTime - Date.now()) / 1000));
+        if (remainingSec <= 0) {
+          clearSleepTimer();
+          state.timerOptionIndex = 0;
+          clearGapTimer();
+          audio.pause();
+          isPlaying = false;
+          updatePlaybackButtons();
+          updateSleepTimerDisplay();
+          showToast('🌙 定時時間到，已自動暫停播放！');
+          return;
+        }
+
+        const formatted = formatTime(remainingSec);
+        timerBtnText.textContent = `定時關閉：剩餘 ${formatted}`;
+        timerBtn.classList.add('bg-amber-50', 'border-amber-300', 'text-amber-800');
+        headerTimerText.textContent = `剩餘 ${formatted}`;
+        headerTimerBadge.classList.remove('hidden');
+        headerTimerBadge.classList.add('flex');
+      }
+
+      function cycleSleepTimer() {
+        state.timerOptionIndex = (state.timerOptionIndex + 1) % TIMER_OPTIONS.length;
+        const mins = TIMER_OPTIONS[state.timerOptionIndex];
+        clearSleepTimer();
+
+        if (mins > 0) {
+          sleepEndTime = Date.now() + mins * 60 * 1000;
+          sleepIntervalId = setInterval(updateSleepTimerDisplay, 500);
+          showToast(`🌙 已設定 ${mins} 分鐘後自動暫停`);
+        } else {
+          showToast('已關閉定時器');
+        }
+        updateSleepTimerDisplay();
+      }
+
+      /* =========================================================
+         Media Session API (Lock Screen / Bluetooth / CarPlay)
+      ========================================================== */
+      function updateMediaSession(track) {
+        if (!('mediaSession' in navigator) || !track) return;
+        try {
+          navigator.mediaSession.metadata = new MediaMetadata({
+            title: `${track.code} (第 ${track.unitTrackNum}/${track.unitTrackTotal} 軌)`,
+            artist: 'Super Star Level 1',
+            album: track.unit
+          });
+
+          navigator.mediaSession.setActionHandler('play', () => {
+            if (audio.paused) togglePlayPause();
+          });
+          navigator.mediaSession.setActionHandler('pause', () => {
+            if (!audio.paused) togglePlayPause();
+          });
+          navigator.mediaSession.setActionHandler('previoustrack', () => {
+            playPrevTrack(true);
+          });
+          navigator.mediaSession.setActionHandler('nexttrack', () => {
+            playNextTrack(true);
+          });
+          navigator.mediaSession.setActionHandler('seekto', (details) => {
+            if (details.seekTime !== undefined && Number.isFinite(audio.duration)) {
+              audio.currentTime = details.seekTime;
+            }
+          });
+        } catch (e) {
+          // Some mobile webviews partially implement MediaSession
+        }
+      }
+
+      /* =========================================================
+         UI Rendering Functions
+      ========================================================== */
+      function updatePlaybackButtons() {
+        if (isPlaying) {
+          playIcon.classList.add('hidden');
+          pauseIcon.classList.remove('hidden');
+          if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'playing';
+          }
+        } else {
+          playIcon.classList.remove('hidden');
+          pauseIcon.classList.add('hidden');
+          if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'paused';
+          }
+        }
+      }
+
+      function updateControlPillsUI() {
+        const rep = REPEAT_OPTIONS[state.repeatIndex];
+        repeatBtnText.textContent = rep.label;
+        repeatBtn.classList.toggle('bg-blue-50', rep.value !== 1);
+        repeatBtn.classList.toggle('border-blue-300', rep.value !== 1);
+        repeatBtn.classList.toggle('text-blue-700', rep.value !== 1);
+
+        orderBtnIcon.textContent = state.shuffle ? '🔀' : '➡️';
+        orderBtnText.textContent = state.shuffle ? '隨機循環' : '順序循環';
+        orderBtn.classList.toggle('bg-blue-50', state.shuffle);
+        orderBtn.classList.toggle('border-blue-300', state.shuffle);
+        orderBtn.classList.toggle('text-blue-700', state.shuffle);
+
+        const spd = SPEED_OPTIONS[state.speedIndex];
+        speedBtnText.textContent = `語速 ${spd}x`;
+        speedBtn.classList.toggle('bg-blue-50', spd !== 1.0);
+        speedBtn.classList.toggle('border-blue-300', spd !== 1.0);
+        speedBtn.classList.toggle('text-blue-700', spd !== 1.0);
+
+        const gap = GAP_OPTIONS[state.gapIndex];
+        gapBtnText.textContent = gap.label;
+        gapBtn.classList.toggle('bg-blue-50', gap.value > 0);
+        gapBtn.classList.toggle('border-blue-300', gap.value > 0);
+        gapBtn.classList.toggle('text-blue-700', gap.value > 0);
+      }
+
+      function updateNowPlayingUI() {
+        if (!activeQueue.length) {
+          nowUnitBadge.textContent = '尚未選擇單元';
+          nowTrackTitle.textContent = '請從下方勾選播放範圍';
+          nowQueueMeta.textContent = '目前播放清單為空';
+          repeatProgressBadge.classList.add('hidden');
+          setLoading(false);
+          return;
+        }
+
+        const track = activeQueue[currentIndex];
+        nowUnitBadge.textContent = track.unit;
+        nowTrackTitle.textContent = `${track.code} (第 ${track.unitTrackNum}/${track.unitTrackTotal} 軌)`;
+        nowQueueMeta.textContent = `播放清單第 ${currentIndex + 1} / ${activeQueue.length} 首`;
+
+        const repVal = REPEAT_OPTIONS[state.repeatIndex].value;
+        if (repVal === Infinity) {
+          repeatProgressBadge.textContent = '單曲無限循環';
+          repeatProgressBadge.classList.remove('hidden');
+        } else if (repVal > 1) {
+          repeatProgressBadge.textContent = `第 ${currentRepeatCount}/${repVal} 遍`;
+          repeatProgressBadge.classList.remove('hidden');
+        } else {
+          repeatProgressBadge.classList.add('hidden');
+        }
+      }
+
+      function renderUnitGrid() {
+        const selectedSet = new Set(state.selectedUnits);
+        selectedUnitsSummary.textContent = `已選 ${state.selectedUnits.length} 單元`;
+        skipTestsToggle.checked = state.skipTests;
+
+        unitGrid.innerHTML = AUDIO_CATALOG.map(unitObj => {
+          const isSelected = selectedSet.has(unitObj.unit);
+          const filteredCount = getFilteredTracksForUnit(unitObj, state.skipTests).length;
+          const isSkippedUnit = state.skipTests && filteredCount === 0;
+          const isCD2 = CD2_UNITS.includes(unitObj.unit);
+
+          const baseClasses = isSelected
+            ? 'bg-blue-50 border-blue-500 text-blue-900 shadow-sm shadow-blue-500/10'
+            : 'bg-slate-50/70 border-slate-200 text-slate-700 hover:bg-slate-100';
+
+          const dimClass = isSkippedUnit ? 'opacity-50' : '';
+
+          return `
+            <button
+              type="button"
+              data-unit="${unitObj.unit}"
+              class="unit-chip relative flex flex-col items-start justify-between p-3 rounded-2xl border-2 text-left transition active:scale-[0.97] ${baseClasses} ${dimClass}"
+            >
+              <div class="w-full flex items-center justify-between gap-1 mb-1">
+                <span class="text-sm font-extrabold truncate">${unitObj.unit}</span>
+                <span class="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-black shrink-0 ${isSelected ? 'bg-blue-500 text-white' : 'bg-slate-200/80 text-transparent'}">
+                  ✓
+                </span>
+              </div>
+              <div class="w-full flex items-center justify-between text-[11px] font-semibold ${isSelected ? 'text-blue-600' : 'text-slate-400'}">
+                <span>${isSkippedUnit ? '已略過測驗' : filteredCount + ' 軌'}</span>
+                <span class="px-1.5 py-0.5 rounded-md ${isCD2 ? 'bg-indigo-100/70 text-indigo-600' : 'bg-sky-100/70 text-sky-700'} text-[10px]">
+                  ${isCD2 ? 'CD2' : 'CD1'}
+                </span>
+              </div>
+            </button>
+          `;
+        }).join('');
+
+        // Bind unit chip click listeners
+        unitGrid.querySelectorAll('.unit-chip').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const unitName = btn.getAttribute('data-unit');
+            const idx = state.selectedUnits.indexOf(unitName);
+            if (idx === -1) {
+              state.selectedUnits.push(unitName);
+            } else {
+              state.selectedUnits.splice(idx, 1);
+            }
+            savePreferences();
+            renderUnitGrid();
+            rebuildQueue(true);
+          });
+        });
+      }
+
+      function renderPlaylist() {
+        playlistCountBadge.textContent = `${activeQueue.length} 首`;
+
+        if (!activeQueue.length) {
+          playlistList.innerHTML = `
+            <div class="py-10 text-center text-sm text-slate-400 font-medium">
+              目前沒有音軌，請先勾選上方單元
+            </div>
+          `;
+          return;
+        }
+
+        playlistList.innerHTML = activeQueue.map((track, idx) => {
+          const isCurrent = idx === currentIndex;
+          return `
+            <button
+              type="button"
+              data-track-idx="${idx}"
+              id="playlist-item-${idx}"
+              class="playlist-item w-full flex items-center justify-between gap-3 px-4 py-3 text-left transition ${isCurrent ? 'bg-blue-50/90 text-blue-700' : 'hover:bg-slate-50 text-slate-700'}"
+            >
+              <div class="flex items-center gap-3 min-w-0">
+                <span class="w-6 text-center text-xs font-bold tabular-nums shrink-0 ${isCurrent ? 'text-blue-600' : 'text-slate-400'}">
+                  ${isCurrent ? '▶' : idx + 1}
+                </span>
+                <div class="min-w-0">
+                  <div class="text-sm font-bold truncate">
+                    ${track.unit} · ${track.code}
+                  </div>
+                  <div class="text-[11px] font-medium ${isCurrent ? 'text-blue-500' : 'text-slate-400'}">
+                    單元第 ${track.unitTrackNum} / ${track.unitTrackTotal} 軌
+                  </div>
+                </div>
+              </div>
+              ${isCurrent ? '<span class="shrink-0 text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-blue-500 text-white">播放中</span>' : ''}
+            </button>
+          `;
+        }).join('');
+
+        playlistList.querySelectorAll('.playlist-item').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = Number(btn.getAttribute('data-track-idx'));
+            currentRepeatCount = 1;
+            loadTrack(idx, true);
+          });
+        });
+      }
+
+      function highlightActivePlaylistItem() {
+        renderPlaylist();
+      }
+
+      function scrollToCurrentPlaylistItem() {
+        const el = document.getElementById('playlist-item-' + currentIndex);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+
+      /* =========================================================
+         Event Listeners
+      ========================================================== */
+      playPauseBtn.addEventListener('click', togglePlayPause);
+      prevBtn.addEventListener('click', () => playPrevTrack(true));
+      nextBtn.addEventListener('click', () => playNextTrack(true));
+      errorSkipBtn.addEventListener('click', () => playNextTrack(true));
+
+      // Progress slider seeking
+      progressSlider.addEventListener('input', () => {
+        isSeeking = true;
+        if (Number.isFinite(audio.duration) && audio.duration > 0) {
+          const previewTime = (Number(progressSlider.value) / 100) * audio.duration;
+          currentTimeLabel.textContent = formatTime(previewTime);
+        }
+      });
+
+      progressSlider.addEventListener('change', () => {
+        if (Number.isFinite(audio.duration) && audio.duration > 0) {
+          audio.currentTime = (Number(progressSlider.value) / 100) * audio.duration;
+        }
+        isSeeking = false;
+      });
+
+      // Quick control pills
+      repeatBtn.addEventListener('click', () => {
+        state.repeatIndex = (state.repeatIndex + 1) % REPEAT_OPTIONS.length;
+        currentRepeatCount = 1;
+        savePreferences();
+        updateControlPillsUI();
+        updateNowPlayingUI();
+        showToast(`單曲重複：${REPEAT_OPTIONS[state.repeatIndex].label}`);
+      });
+
+      orderBtn.addEventListener('click', () => {
+        state.shuffle = !state.shuffle;
+        savePreferences();
+        updateControlPillsUI();
+        showToast(state.shuffle ? '🔀 已切換為隨機循環' : '➡️ 已切換為順序循環');
+      });
+
+      speedBtn.addEventListener('click', () => {
+        state.speedIndex = (state.speedIndex + 1) % SPEED_OPTIONS.length;
+        applyPlaybackSpeed();
+        savePreferences();
+        updateControlPillsUI();
+        showToast(`⚡ 播放速度：${SPEED_OPTIONS[state.speedIndex]}x`);
+      });
+
+      gapBtn.addEventListener('click', () => {
+        state.gapIndex = (state.gapIndex + 1) % GAP_OPTIONS.length;
+        savePreferences();
+        updateControlPillsUI();
+        showToast(`⏱️ 曲間停頓：${GAP_OPTIONS[state.gapIndex].label}`);
+      });
+
+      timerBtn.addEventListener('click', cycleSleepTimer);
+
+      // Unit presets & Skip tests toggle
+      presetAllBtn.addEventListener('click', () => {
+        state.selectedUnits = AUDIO_CATALOG.map(u => u.unit);
+        savePreferences();
+        renderUnitGrid();
+        rebuildQueue(true);
+        showToast('已全選所有單元');
+      });
+
+      presetCD1Btn.addEventListener('click', () => {
+        state.selectedUnits = [...CD1_UNITS];
+        savePreferences();
+        renderUnitGrid();
+        rebuildQueue(true);
+        showToast('已選擇 CD1 (U1–U4)');
+      });
+
+      presetCD2Btn.addEventListener('click', () => {
+        state.selectedUnits = [...CD2_UNITS];
+        savePreferences();
+        renderUnitGrid();
+        rebuildQueue(true);
+        showToast('已選擇 CD2 (U5–U8)');
+      });
+
+      presetClearBtn.addEventListener('click', () => {
+        state.selectedUnits = [];
+        savePreferences();
+        renderUnitGrid();
+        rebuildQueue(false);
+        showToast('已清空選擇');
+      });
+
+      skipTestsToggle.addEventListener('change', () => {
+        state.skipTests = skipTestsToggle.checked;
+        savePreferences();
+        renderUnitGrid();
+        rebuildQueue(true);
+        showToast(state.skipTests ? '已跳過各單元最後 3 軌測驗題' : '已恢復包含所有測驗題音軌');
+      });
+
+      // Expandable playlist toggle
+      playlistToggleBtn.addEventListener('click', () => {
+        state.playlistExpanded = !state.playlistExpanded;
+        playlistBody.classList.toggle('hidden', !state.playlistExpanded);
+        playlistChevron.classList.toggle('rotate-180', state.playlistExpanded);
+        if (state.playlistExpanded) {
+          setTimeout(scrollToCurrentPlaylistItem, 80);
+        }
+      });
+
+      scrollToCurrentBtn.addEventListener('click', scrollToCurrentPlaylistItem);
+
+      /* =========================================================
+         HTML5 Audio Element Events
+      ========================================================== */
+      audio.addEventListener('waiting', () => setLoading(true));
+      audio.addEventListener('loadstart', () => setLoading(true));
+
+      audio.addEventListener('canplay', () => {
+        setLoading(false);
+        applyPlaybackSpeed();
+      });
+
+      audio.addEventListener('loadedmetadata', () => {
+        totalTimeLabel.textContent = formatTime(audio.duration);
+        applyPlaybackSpeed();
+      });
+
+      audio.addEventListener('playing', () => {
+        setLoading(false);
+        hideError();
+        isPlaying = true;
+        applyPlaybackSpeed();
+        updatePlaybackButtons();
+      });
+
+      audio.addEventListener('pause', () => {
+        // Ignore transient pauses when ended or during track switch
+        if (!audio.ended && !gapTimerId) {
+          isPlaying = false;
+          updatePlaybackButtons();
+        }
+      });
+
+      audio.addEventListener('timeupdate', () => {
+        if (isSeeking || !Number.isFinite(audio.duration) || audio.duration <= 0) return;
+        const pct = (audio.currentTime / audio.duration) * 100;
+        progressSlider.value = pct;
+        currentTimeLabel.textContent = formatTime(audio.currentTime);
+        totalTimeLabel.textContent = formatTime(audio.duration);
+      });
+
+      audio.addEventListener('ended', handleTrackEnded);
+
+      audio.addEventListener('error', () => {
+        setLoading(false);
+        isPlaying = false;
+        updatePlaybackButtons();
+        if (activeQueue.length > 0) {
+          const track = activeQueue[currentIndex];
+          showError(`無法載入 ${track.code}，請確認網路或點右側略過。`);
+        }
+      });
+
+      /* =========================================================
+         Initialize App
+      ========================================================== */
+      loadPreferences();
+      updateControlPillsUI();
+      updateSleepTimerDisplay();
+      renderUnitGrid();
+      rebuildQueue(false);
+    })();
+  </script>
+</body>
+</html>

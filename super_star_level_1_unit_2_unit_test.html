@@ -1,0 +1,2317 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Super Star Level 1 — Unit 2 Unit Test 重考練習</title>
+  <style>
+    /* =========================================================
+       Design Tokens & Base Styles (Self-contained, Zero CDN)
+    ========================================================= */
+    :root {
+      --bg-top: #ecfdf5;
+      --bg-bottom: #fffbeb;
+      --card-bg: #ffffff;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --emerald: #16a34a;
+      --emerald-dark: #15803d;
+      --emerald-soft: #dcfce7;
+      --sky: #0ea5e9;
+      --sky-dark: #0284c7;
+      --sky-soft: #e0f2fe;
+      --yellow: #facc15;
+      --yellow-soft: #fef9c3;
+      --amber: #f59e0b;
+      --amber-dark: #d97706;
+      --red: #ef4444;
+      --red-soft: #fee2e2;
+      --border: #e2e8f0;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+      --shadow-card: 0 6px 20px rgba(15, 23, 42, 0.06);
+      --shadow-btn: 0 4px 0 rgba(0, 0, 0, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      overflow-x: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", "Segoe UI", Roboto, sans-serif;
+      color: var(--text-main);
+      background: linear-gradient(180deg, var(--bg-top) 0%, #f7fee7 45%, var(--bg-bottom) 100%);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      outline: none;
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    /* =========================================================
+       Sticky Header
+    ========================================================= */
+    .sticky-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-bottom: 2px solid #d1fae5;
+      box-shadow: 0 4px 14px rgba(22, 163, 74, 0.08);
+    }
+
+    .header-inner {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .brand-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 800;
+      font-size: 1.05rem;
+      color: var(--emerald-dark);
+      letter-spacing: -0.01em;
+    }
+
+    .brand-badge {
+      background: var(--emerald);
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .progress-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.86rem;
+      font-weight: 700;
+      background: var(--emerald-soft);
+      color: var(--emerald-dark);
+      border: 1.5px solid #86efac;
+      transition: all 0.25s ease;
+    }
+
+    .progress-pill.retry-mode {
+      background: #ffedd5;
+      color: #c2410c;
+      border-color: #fdba74;
+    }
+
+    .speed-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 12px;
+      min-height: 36px;
+      border-radius: 999px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      background: var(--sky-soft);
+      color: var(--sky-dark);
+      border: 1.5px solid #7dd3fc;
+      transition: transform 0.12s ease, background 0.2s ease;
+    }
+
+    .speed-btn:active {
+      transform: scale(0.96);
+    }
+
+    .speed-btn.slow {
+      background: var(--yellow-soft);
+      color: #a16207;
+      border-color: #fde047;
+    }
+
+    /* =========================================================
+       Main Container & Intro Banner
+    ========================================================= */
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 16px 14px 48px;
+    }
+
+    .retry-banner {
+      display: none;
+      background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+      border: 2px solid #fb923c;
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      color: #9a3412;
+      font-weight: 700;
+      font-size: 0.95rem;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 4px 12px rgba(251, 146, 60, 0.15);
+    }
+
+    .retry-banner.visible {
+      display: flex;
+    }
+
+    /* =========================================================
+       Result Summary Card
+    ========================================================= */
+    .result-card {
+      display: none;
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      padding: 22px 18px;
+      margin-bottom: 20px;
+      text-align: center;
+      box-shadow: 0 10px 28px rgba(22, 163, 74, 0.14);
+      border: 3px solid var(--emerald);
+      animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .result-card.visible {
+      display: block;
+    }
+
+    .result-card.has-errors {
+      border-color: var(--amber);
+      box-shadow: 0 10px 28px rgba(245, 158, 11, 0.16);
+    }
+
+    .result-emoji {
+      font-size: 3rem;
+      line-height: 1.1;
+      margin-bottom: 6px;
+    }
+
+    .result-score {
+      font-size: 2.3rem;
+      font-weight: 900;
+      color: var(--emerald-dark);
+      margin: 4px 0;
+    }
+
+    .result-card.has-errors .result-score {
+      color: var(--amber-dark);
+    }
+
+    .result-subtitle {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 6px;
+    }
+
+    .result-detail {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .result-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 380px;
+      margin: 0 auto;
+    }
+
+    .btn-retry-wrong {
+      width: 100%;
+      min-height: 54px;
+      padding: 12px 18px;
+      border-radius: 16px;
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #fff;
+      background: linear-gradient(180deg, #fb923c 0%, #ea580c 100%);
+      box-shadow: 0 4px 0 #c2410c;
+      transition: transform 0.12s ease;
+    }
+
+    .btn-retry-wrong:active {
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 #c2410c;
+    }
+
+    .btn-restart-all {
+      width: 100%;
+      min-height: 48px;
+      padding: 10px 16px;
+      border-radius: 14px;
+      font-size: 0.96rem;
+      font-weight: 700;
+      color: var(--emerald-dark);
+      background: var(--emerald-soft);
+      border: 2px solid #86efac;
+      transition: transform 0.12s ease, background 0.2s ease;
+    }
+
+    .btn-restart-all:active {
+      transform: scale(0.98);
+    }
+
+    /* Parent Helper */
+    .parent-helper-wrap {
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1.5px dashed var(--border);
+    }
+
+    .btn-parent-toggle {
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      min-height: 38px;
+    }
+
+    .btn-parent-toggle:hover {
+      background: #f8fafc;
+      color: var(--text-main);
+    }
+
+    .parent-table-box {
+      display: none;
+      margin-top: 12px;
+      text-align: left;
+      overflow-x: auto;
+      background: #f8fafc;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      padding: 10px;
+    }
+
+    .parent-table-box.open {
+      display: block;
+    }
+
+    .parent-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.84rem;
+    }
+
+    .parent-table th,
+    .parent-table td {
+      padding: 7px 8px;
+      border-bottom: 1px solid #e2e8f0;
+      vertical-align: top;
+    }
+
+    .parent-table th {
+      color: var(--text-muted);
+      font-weight: 700;
+      background: #f1f5f9;
+      white-space: nowrap;
+    }
+
+    .parent-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .ans-chip {
+      display: inline-block;
+      background: var(--emerald-soft);
+      color: var(--emerald-dark);
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 8px;
+      white-space: nowrap;
+    }
+
+    /* =========================================================
+       Section Headers
+    ========================================================= */
+    .quiz-section {
+      margin-bottom: 24px;
+    }
+
+    .quiz-section.hidden {
+      display: none;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      padding: 10px 14px;
+      background: linear-gradient(90deg, var(--emerald) 0%, #22c55e 100%);
+      color: #fff;
+      border-radius: var(--radius-md);
+      box-shadow: 0 4px 12px rgba(22, 163, 74, 0.18);
+    }
+
+    .section-num {
+      background: var(--yellow);
+      color: #713f12;
+      font-weight: 900;
+      font-size: 0.85rem;
+      padding: 4px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .section-title-wrap {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .section-en {
+      font-weight: 800;
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+
+    .section-zh {
+      font-size: 0.84rem;
+      opacity: 0.95;
+      font-weight: 600;
+    }
+
+    /* =========================================================
+       Question Card
+    ========================================================= */
+    .question-card {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow-card);
+      border: 2.5px solid #e2e8f0;
+      transition: border-color 0.25s ease, transform 0.2s ease, box-shadow 0.25s ease;
+    }
+
+    .question-card.hidden {
+      display: none;
+    }
+
+    .question-card.needs-attention {
+      border-color: var(--amber);
+      animation: shake 0.4s ease;
+    }
+
+    .question-card.graded-correct {
+      border-color: var(--emerald);
+      background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%);
+    }
+
+    .question-card.graded-wrong {
+      border-color: var(--red);
+      background: linear-gradient(180deg, #ffffff 0%, #fef2f2 100%);
+    }
+
+    .q-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .q-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .q-number {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--emerald-soft);
+      color: var(--emerald-dark);
+      font-weight: 900;
+      font-size: 1.05rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      border: 2px solid #86efac;
+    }
+
+    .audio-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 48px;
+      padding: 8px 18px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #38bdf8 0%, var(--sky) 100%);
+      color: #fff;
+      font-size: 0.98rem;
+      font-weight: 800;
+      box-shadow: 0 4px 0 var(--sky-dark);
+      transition: transform 0.12s ease, background 0.2s ease;
+    }
+
+    .audio-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 var(--sky-dark);
+    }
+
+    .audio-btn.playing {
+      background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 100%);
+      box-shadow: 0 4px 0 #b45309;
+      animation: pulseBtn 1s infinite ease-in-out;
+    }
+
+    .status-badge {
+      display: none;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      font-weight: 800;
+    }
+
+    .status-badge.correct {
+      display: inline-flex;
+      background: var(--emerald);
+      color: #fff;
+    }
+
+    .status-badge.wrong {
+      display: inline-flex;
+      background: var(--red);
+      color: #fff;
+    }
+
+    /* =========================================================
+       Part 1: Two Image Cards Side-by-Side
+    ========================================================= */
+    .part1-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .img-option-btn {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #f8fafc;
+      border: 3px solid #e2e8f0;
+      border-radius: var(--radius-md);
+      padding: 10px 8px;
+      min-height: 132px;
+      width: 100%;
+      transition: all 0.18s ease;
+    }
+
+    .img-option-btn:hover:not(:disabled) {
+      border-color: #93c5fd;
+      background: #f0f9ff;
+    }
+
+    .img-option-btn:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+
+    .img-option-btn svg {
+      width: 100%;
+      max-width: 210px;
+      height: auto;
+      display: block;
+    }
+
+    .img-option-btn .check-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--sky);
+      color: #fff;
+      font-weight: 900;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transform: scale(0.6);
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+    }
+
+    .img-option-btn.selected {
+      border-color: var(--sky);
+      background: #e0f2fe;
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.22);
+    }
+
+    .img-option-btn.selected .check-badge {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .img-option-btn.correct-picked {
+      border-color: var(--emerald);
+      background: var(--emerald-soft);
+      box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.22);
+    }
+
+    .img-option-btn.correct-picked .check-badge {
+      opacity: 1;
+      transform: scale(1);
+      background: var(--emerald);
+    }
+
+    .img-option-btn.wrong-picked {
+      border-color: var(--red);
+      background: var(--red-soft);
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.22);
+    }
+
+    .img-option-btn.wrong-picked .check-badge {
+      opacity: 1;
+      transform: scale(1);
+      background: var(--red);
+    }
+
+    /* =========================================================
+       Part 2: Centered Illustration + a / b Buttons
+    ========================================================= */
+    .part2-figure {
+      background: #f8fafc;
+      border: 2px solid #e2e8f0;
+      border-radius: var(--radius-md);
+      padding: 10px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .part2-figure svg {
+      width: 100%;
+      max-width: 280px;
+      height: auto;
+      display: block;
+      border-radius: 12px;
+    }
+
+    .ab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .ab-btn {
+      min-height: 58px;
+      border-radius: var(--radius-md);
+      background: #f8fafc;
+      border: 3px solid #cbd5e1;
+      color: var(--text-main);
+      font-size: 1.5rem;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.18s ease;
+    }
+
+    .ab-btn:hover:not(:disabled) {
+      border-color: #7dd3fc;
+      background: #f0f9ff;
+    }
+
+    .ab-btn:active:not(:disabled) {
+      transform: scale(0.97);
+    }
+
+    .ab-btn.selected {
+      border-color: var(--sky);
+      background: var(--sky-soft);
+      color: var(--sky-dark);
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+    }
+
+    .ab-btn.correct-picked {
+      border-color: var(--emerald);
+      background: var(--emerald-soft);
+      color: var(--emerald-dark);
+    }
+
+    .ab-btn.wrong-picked {
+      border-color: var(--red);
+      background: var(--red-soft);
+      color: #b91c1c;
+    }
+
+    /* =========================================================
+       Part 3: Scene Illustration + Full-Width Sentence Options
+    ========================================================= */
+    .part3-figure {
+      background: #f8fafc;
+      border: 2px solid #e2e8f0;
+      border-radius: var(--radius-md);
+      padding: 8px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .part3-figure svg {
+      width: 100%;
+      max-width: 380px;
+      height: auto;
+      display: block;
+      border-radius: 12px;
+    }
+
+    .sentence-options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .sentence-btn {
+      width: 100%;
+      min-height: 56px;
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      background: #f8fafc;
+      border: 3px solid #cbd5e1;
+      color: var(--text-main);
+      font-size: 1.08rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+      transition: all 0.18s ease;
+    }
+
+    .sentence-btn:hover:not(:disabled) {
+      border-color: #7dd3fc;
+      background: #f0f9ff;
+    }
+
+    .sentence-btn:active:not(:disabled) {
+      transform: scale(0.99);
+    }
+
+    .opt-letter {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #e2e8f0;
+      color: #334155;
+      font-weight: 900;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .sentence-btn.selected {
+      border-color: var(--sky);
+      background: var(--sky-soft);
+      color: var(--sky-dark);
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+    }
+
+    .sentence-btn.selected .opt-letter {
+      background: var(--sky);
+      color: #fff;
+    }
+
+    .sentence-btn.correct-picked {
+      border-color: var(--emerald);
+      background: var(--emerald-soft);
+      color: var(--emerald-dark);
+    }
+
+    .sentence-btn.correct-picked .opt-letter {
+      background: var(--emerald);
+      color: #fff;
+    }
+
+    .sentence-btn.wrong-picked {
+      border-color: var(--red);
+      background: var(--red-soft);
+      color: #b91c1c;
+    }
+
+    .sentence-btn.wrong-picked .opt-letter {
+      background: var(--red);
+      color: #fff;
+    }
+
+    button:disabled {
+      cursor: default;
+    }
+
+    /* =========================================================
+       Submit Bar
+    ========================================================= */
+    .submit-area {
+      margin-top: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-submit {
+      width: 100%;
+      max-width: 420px;
+      min-height: 60px;
+      padding: 14px 24px;
+      border-radius: 20px;
+      background: linear-gradient(180deg, #22c55e 0%, var(--emerald) 100%);
+      color: #fff;
+      font-size: 1.2rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      box-shadow: 0 5px 0 var(--emerald-dark), 0 10px 20px rgba(22, 163, 74, 0.25);
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+
+    .btn-submit:active {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 var(--emerald-dark);
+    }
+
+    .btn-submit.hidden {
+      display: none;
+    }
+
+    /* =========================================================
+       Toast Notification (Zero alert())
+    ========================================================= */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(90px);
+      background: #1e293b;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      white-space: nowrap;
+      max-width: 92vw;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .toast.warn {
+      background: #ea580c;
+    }
+
+    /* =========================================================
+       Confetti Canvas
+    ========================================================= */
+    #confettiCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 90;
+    }
+
+    /* =========================================================
+       Animations
+    ========================================================= */
+    @keyframes pulseBtn {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.04); }
+    }
+
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.92); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+
+    /* =========================================================
+       Responsive Tweaks
+    ========================================================= */
+    @media (min-width: 560px) {
+      .header-inner {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 20px;
+      }
+      .brand-title {
+        font-size: 1.15rem;
+      }
+      .question-card {
+        padding: 20px;
+      }
+      .part1-grid {
+        gap: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Confetti Layer -->
+  <canvas id="confettiCanvas"></canvas>
+
+  <!-- Sticky Header -->
+  <header class="sticky-header">
+    <div class="header-inner">
+      <div class="header-top">
+        <div class="brand-title">
+          <span class="brand-badge">Unit 2</span>
+          <span>Super Star 1 重考練習</span>
+        </div>
+      </div>
+      <div class="header-controls">
+        <div id="progressPill" class="progress-pill">已作答 0 / 10 題</div>
+        <button id="speedToggleBtn" class="speed-btn" type="button" aria-label="切換語音速度">
+          🐢 語速：正常 0.85x
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container">
+    <!-- Retry Mode Banner -->
+    <div id="retryBanner" class="retry-banner">
+      <span style="font-size: 1.4rem;">🔥</span>
+      <span id="retryBannerText">錯題重做模式：把剛剛答錯的題目再聽一次、重新挑戰！</span>
+    </div>
+
+    <!-- Result Summary Card (Hidden until submitted) -->
+    <section id="resultCard" class="result-card" aria-live="polite">
+      <div id="resultEmoji" class="result-emoji">🎉</div>
+      <div id="resultScore" class="result-score">100 分</div>
+      <div id="resultSubtitle" class="result-subtitle">太棒了！全部答對！</div>
+      <div id="resultDetail" class="result-detail"></div>
+      <div id="resultActions" class="result-actions"></div>
+
+      <!-- Parent Helper (Collapsed by default, only visible after submission) -->
+      <div class="parent-helper-wrap">
+        <button id="parentToggleBtn" class="btn-parent-toggle" type="button">
+          👀 家長看解答與語音稿
+        </button>
+        <div id="parentTableBox" class="parent-table-box">
+          <table class="parent-table">
+            <thead>
+              <tr>
+                <th>題號</th>
+                <th>語音唸法</th>
+                <th>正確答案</th>
+              </tr>
+            </thead>
+            <tbody id="parentTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Quiz Sections Container -->
+    <div id="quizContainer"></div>
+
+    <!-- Submit Button -->
+    <div class="submit-area">
+      <button id="submitBtn" class="btn-submit" type="button">
+        ✅ 交卷批改
+      </button>
+    </div>
+  </main>
+
+  <!-- Toast Message -->
+  <div id="toast" class="toast" role="status" aria-live="assertive"></div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      /* =========================================================
+         Custom Clean Inline SVG Illustrations (Zero Pencil Marks)
+      ========================================================= */
+      const SVGS = {
+        /* Q1 Left: 4 colorful balls (beach ball, orange, blue, yellow dotted) */
+        q1_balls: `
+          <svg viewBox="0 0 220 150" xmlns="http://www.w3.org/2000/svg" aria-label="四顆彩色球">
+            <rect width="220" height="150" rx="14" fill="#f0fdf4"/>
+            <!-- Striped Beach Ball -->
+            <g transform="translate(92, 62)">
+              <circle cx="0" cy="0" r="34" fill="#ffffff" stroke="#1e293b" stroke-width="2.5"/>
+              <path d="M0,-34 A34,34 0 0,1 32,-11 L0,0 Z" fill="#ef4444"/>
+              <path d="M32,-11 A34,34 0 0,1 18,29 L0,0 Z" fill="#facc15"/>
+              <path d="M18,29 A34,34 0 0,1 -22,26 L0,0 Z" fill="#22c55e"/>
+              <path d="M-22,26 A34,34 0 0,1 -31,-14 L0,0 Z" fill="#38bdf8"/>
+              <circle cx="0" cy="0" r="7" fill="#ffffff" stroke="#1e293b" stroke-width="2"/>
+              <circle cx="0" cy="0" r="34" fill="none" stroke="#1e293b" stroke-width="2.5"/>
+            </g>
+            <!-- Orange Ball -->
+            <g transform="translate(52, 102)">
+              <circle cx="0" cy="0" r="24" fill="#fb923c" stroke="#1e293b" stroke-width="2.5"/>
+              <path d="M-24,0 Q0,-10 24,0" fill="none" stroke="#9a3412" stroke-width="2"/>
+              <path d="M0,-24 Q10,0 0,24" fill="none" stroke="#9a3412" stroke-width="2"/>
+              <ellipse cx="-8" cy="-9" rx="5" ry="3" fill="#fed7aa" opacity="0.8"/>
+            </g>
+            <!-- Small Blue Ball -->
+            <g transform="translate(108, 118)">
+              <circle cx="0" cy="0" r="17" fill="#3b82f6" stroke="#1e293b" stroke-width="2.5"/>
+              <path d="M-12,-10 Q0,0 12,-10" fill="none" stroke="#bfdbfe" stroke-width="2.5" stroke-linecap="round"/>
+              <circle cx="-5" cy="-5" r="3.5" fill="#dbeafe" opacity="0.85"/>
+            </g>
+            <!-- Yellow Dotted Ball -->
+            <g transform="translate(162, 86)">
+              <circle cx="0" cy="0" r="24" fill="#fde047" stroke="#1e293b" stroke-width="2.5"/>
+              <circle cx="-9" cy="-8" r="4" fill="#ef4444"/>
+              <circle cx="9" cy="-6" r="4" fill="#3b82f6"/>
+              <circle cx="-7" cy="9" r="4" fill="#22c55e"/>
+              <circle cx="8" cy="10" r="4" fill="#a855f7"/>
+              <circle cx="0" cy="1" r="3.5" fill="#f97316"/>
+            </g>
+          </svg>
+        `,
+
+        /* Q1 Right: Neat stack of colorful toy building blocks (blue, yellow, red) */
+        q1_blocks: `
+          <svg viewBox="0 0 220 150" xmlns="http://www.w3.org/2000/svg" aria-label="彩色積木">
+            <rect width="220" height="150" rx="14" fill="#eff6ff"/>
+            <!-- Soft shadow -->
+            <ellipse cx="110" cy="126" rx="64" ry="10" fill="#cbd5e1" opacity="0.6"/>
+            <!-- Bottom Red Long Block -->
+            <g transform="translate(60, 88)">
+              <rect x="0" y="8" width="100" height="28" rx="4" fill="#ef4444" stroke="#1e293b" stroke-width="2.5"/>
+              <rect x="10" y="1" width="16" height="7" rx="2" fill="#f87171" stroke="#1e293b" stroke-width="2"/>
+              <rect x="34" y="1" width="16" height="7" rx="2" fill="#f87171" stroke="#1e293b" stroke-width="2"/>
+              <rect x="58" y="1" width="16" height="7" rx="2" fill="#f87171" stroke="#1e293b" stroke-width="2"/>
+              <rect x="82" y="1" width="12" height="7" rx="2" fill="#f87171" stroke="#1e293b" stroke-width="2"/>
+            </g>
+            <!-- Middle Blue Block -->
+            <g transform="translate(76, 56)">
+              <rect x="0" y="8" width="68" height="26" rx="4" fill="#3b82f6" stroke="#1e293b" stroke-width="2.5"/>
+              <rect x="10" y="1" width="16" height="7" rx="2" fill="#60a5fa" stroke="#1e293b" stroke-width="2"/>
+              <rect x="40" y="1" width="16" height="7" rx="2" fill="#60a5fa" stroke="#1e293b" stroke-width="2"/>
+            </g>
+            <!-- Top Yellow Block -->
+            <g transform="translate(92, 24)">
+              <rect x="0" y="8" width="38" height="26" rx="4" fill="#facc15" stroke="#1e293b" stroke-width="2.5"/>
+              <rect x="11" y="1" width="16" height="7" rx="2" fill="#fde047" stroke="#1e293b" stroke-width="2"/>
+            </g>
+          </svg>
+        `,
+
+        /* Q2 Left: 3 colorful diamond kites with ribbons/tails */
+        q2_kites: `
+          <svg viewBox="0 0 220 150" xmlns="http://www.w3.org/2000/svg" aria-label="三個彩色風箏">
+            <rect width="220" height="150" rx="14" fill="#f0f9ff"/>
+            <!-- Green Kite -->
+            <g transform="translate(56, 52) rotate(-18)">
+              <path d="M0,26 Q-10,44 4,58 Q16,70 4,84" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round"/>
+              <polygon points="-7,46 7,42 7,50" fill="#facc15"/>
+              <polygon points="0,-28 22,0 0,28 -22,0" fill="#22c55e" stroke="#1e293b" stroke-width="2.5"/>
+              <polygon points="0,-28 22,0 0,0" fill="#86efac"/>
+              <polygon points="0,28 -22,0 0,0" fill="#16a34a"/>
+              <line x1="0" y1="-28" x2="0" y2="28" stroke="#1e293b" stroke-width="1.8"/>
+              <line x1="-22" y1="0" x2="22" y2="0" stroke="#1e293b" stroke-width="1.8"/>
+            </g>
+            <!-- Purple Kite -->
+            <g transform="translate(115, 72) rotate(12)">
+              <path d="M0,26 Q12,42 -2,56 Q-10,66 6,78" fill="none" stroke="#7e22ce" stroke-width="2.5" stroke-linecap="round"/>
+              <polygon points="4,46 -8,42 -8,50" fill="#f472b6"/>
+              <polygon points="0,-28 22,0 0,28 -22,0" fill="#a855f7" stroke="#1e293b" stroke-width="2.5"/>
+              <polygon points="0,-28 -22,0 0,0" fill="#d8b4fe"/>
+              <polygon points="0,28 22,0 0,0" fill="#7e22ce"/>
+              <line x1="0" y1="-28" x2="0" y2="28" stroke="#1e293b" stroke-width="1.8"/>
+              <line x1="-22" y1="0" x2="22" y2="0" stroke="#1e293b" stroke-width="1.8"/>
+            </g>
+            <!-- Yellow Kite -->
+            <g transform="translate(166, 46) rotate(22)">
+              <path d="M0,24 Q10,40 -4,54 Q-12,64 2,76" fill="none" stroke="#ea580c" stroke-width="2.5" stroke-linecap="round"/>
+              <polygon points="-6,42 6,38 6,46" fill="#38bdf8"/>
+              <polygon points="0,-24 19,0 0,24 -19,0" fill="#facc15" stroke="#1e293b" stroke-width="2.5"/>
+              <polygon points="0,-24 19,0 0,0" fill="#fef08a"/>
+              <polygon points="0,24 -19,0 0,0" fill="#f59e0b"/>
+              <line x1="0" y1="-24" x2="0" y2="24" stroke="#1e293b" stroke-width="1.8"/>
+              <line x1="-19" y1="0" x2="19" y2="0" stroke="#1e293b" stroke-width="1.8"/>
+            </g>
+          </svg>
+        `,
+
+        /* Q2 Right: 2 cute colorful robots standing side-by-side (blue & yellow) */
+        q2_robots: `
+          <svg viewBox="0 0 220 150" xmlns="http://www.w3.org/2000/svg" aria-label="兩個機器人">
+            <rect width="220" height="150" rx="14" fill="#fefce8"/>
+            <!-- Blue Robot -->
+            <g transform="translate(72, 24)">
+              <line x1="0" y1="0" x2="0" y2="12" stroke="#1e293b" stroke-width="2.5"/>
+              <circle cx="0" cy="0" r="5" fill="#ef4444" stroke="#1e293b" stroke-width="2"/>
+              <rect x="-20" y="12" width="40" height="30" rx="8" fill="#3b82f6" stroke="#1e293b" stroke-width="2.5"/>
+              <circle cx="-8" cy="24" r="4.5" fill="#ffffff"/>
+              <circle cx="8" cy="24" r="4.5" fill="#ffffff"/>
+              <circle cx="-8" cy="24" r="2" fill="#1e293b"/>
+              <circle cx="8" cy="24" r="2" fill="#1e293b"/>
+              <path d="M-7,34 Q0,39 7,34" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round"/>
+              <rect x="-24" y="45" width="48" height="40" rx="8" fill="#60a5fa" stroke="#1e293b" stroke-width="2.5"/>
+              <rect x="-14" y="54" width="28" height="16" rx="4" fill="#fef08a" stroke="#1e293b" stroke-width="2"/>
+              <circle cx="-6" cy="62" r="3" fill="#ef4444"/>
+              <circle cx="6" cy="62" r="3" fill="#22c55e"/>
+              <!-- Arms -->
+              <rect x="-34" y="48" width="10" height="28" rx="5" fill="#facc15" stroke="#1e293b" stroke-width="2"/>
+              <rect x="24" y="48" width="10" height="28" rx="5" fill="#facc15" stroke="#1e293b" stroke-width="2"/>
+              <!-- Legs -->
+              <rect x="-15" y="85" width="11" height="20" rx="4" fill="#1d4ed8" stroke="#1e293b" stroke-width="2"/>
+              <rect x="4" y="85" width="11" height="20" rx="4" fill="#1d4ed8" stroke="#1e293b" stroke-width="2"/>
+            </g>
+            <!-- Yellow Robot -->
+            <g transform="translate(152, 30)">
+              <line x1="0" y1="0" x2="0" y2="11" stroke="#1e293b" stroke-width="2.5"/>
+              <circle cx="0" cy="0" r="5" fill="#22c55e" stroke="#1e293b" stroke-width="2"/>
+              <rect x="-18" y="11" width="36" height="28" rx="8" fill="#facc15" stroke="#1e293b" stroke-width="2.5"/>
+              <circle cx="-7" cy="22" r="4" fill="#ffffff"/>
+              <circle cx="7" cy="22" r="4" fill="#ffffff"/>
+              <circle cx="-7" cy="22" r="2" fill="#1e293b"/>
+              <circle cx="7" cy="22" r="2" fill="#1e293b"/>
+              <path d="M-6,32 Q0,36 6,32" fill="none" stroke="#1e293b" stroke-width="2.2" stroke-linecap="round"/>
+              <rect x="-21" y="42" width="42" height="37" rx="8" fill="#fde047" stroke="#1e293b" stroke-width="2.5"/>
+              <rect x="-12" y="51" width="24" height="14" rx="4" fill="#38bdf8" stroke="#1e293b" stroke-width="2"/>
+              <rect x="-30" y="45" width="9" height="25" rx="4" fill="#fb923c" stroke="#1e293b" stroke-width="2"/>
+              <rect x="21" y="45" width="9" height="25" rx="4" fill="#fb923c" stroke="#1e293b" stroke-width="2"/>
+              <rect x="-13" y="79" width="10" height="20" rx="4" fill="#ca8a04" stroke="#1e293b" stroke-width="2"/>
+              <rect x="3" y="79" width="10" height="20" rx="4" fill="#ca8a04" stroke="#1e293b" stroke-width="2"/>
+            </g>
+          </svg>
+        `,
+
+        /* Q3 Left: 3 colorful spinning tops (red, yellow, blue) */
+        q3_tops: `
+          <svg viewBox="0 0 220 150" xmlns="http://www.w3.org/2000/svg" aria-label="三個彩色陀螺">
+            <rect width="220" height="150" rx="14" fill="#fdf2f8"/>
+            <!-- Red Spinning Top -->
+            <g transform="translate(60, 92) rotate(-18)">
+              <rect x="-4" y="-34" width="8" height="16" rx="3" fill="#fca5a5" stroke="#1e293b" stroke-width="2"/>
+              <ellipse cx="0" cy="-14" rx="26" ry="12" fill="#ef4444" stroke="#1e293b" stroke-width="2.5"/>
+              <path d="M-25,-12 L0,22 L25,-12 Z" fill="#dc2626" stroke="#1e293b" stroke-width="2.5"/>
+              <ellipse cx="0" cy="-14" rx="14" ry="5" fill="#fde047"/>
+              <circle cx="0" cy="24" r="3.5" fill="#94a3b8" stroke="#1e293b" stroke-width="1.5"/>
+            </g>
+            <!-- Yellow Spinning Top -->
+            <g transform="translate(110, 56) rotate(8)">
+              <rect x="-4" y="-34" width="8" height="16" rx="3" fill="#fef08a" stroke="#1e293b" stroke-width="2"/>
+              <ellipse cx="0" cy="-14" rx="26" ry="12" fill="#facc15" stroke="#1e293b" stroke-width="2.5"/>
+              <path d="M-25,-12 L0,22 L25,-12 Z" fill="#eab308" stroke="#1e293b" stroke-width="2.5"/>
+              <ellipse cx="0" cy="-14" rx="14" ry="5" fill="#ef4444"/>
+              <circle cx="0" cy="24" r="3.5" fill="#94a3b8" stroke="#1e293b" stroke-width="1.5"/>
+            </g>
+            <!-- Blue Spinning Top -->
+            <g transform="translate(160, 94) rotate(16)">
+              <rect x="-4" y="-34" width="8" height="16" rx="3" fill="#93c5fd" stroke="#1e293b" stroke-width="2"/>
+              <ellipse cx="0" cy="-14" rx="26" ry="12" fill="#3b82f6" stroke="#1e293b" stroke-width="2.5"/>
+              <path d="M-25,-12 L0,22 L25,-12 Z" fill="#2563eb" stroke="#1e293b" stroke-width="2.5"/>
+              <ellipse cx="0" cy="-14" rx="14" ry="5" fill="#ffffff"/>
+              <circle cx="0" cy="24" r="3.5" fill="#94a3b8" stroke="#1e293b" stroke-width="1.5"/>
+            </g>
+          </svg>
+        `,
+
+        /* Q3 Right: 2 colorful balls (blue-yellow striped ball & green star ball) */
+        q3_balls: `
+          <svg viewBox="0 0 220 150" xmlns="http://www.w3.org/2000/svg" aria-label="兩顆彩色球">
+            <rect width="220" height="150" rx="14" fill="#f0fdf4"/>
+            <!-- Blue-and-Yellow Striped Ball -->
+            <g transform="translate(128, 64)">
+              <circle cx="0" cy="0" r="38" fill="#2563eb" stroke="#1e293b" stroke-width="2.5"/>
+              <path d="M-14,-35 Q-24,0 -14,35 Q-2,38 6,37 Q-4,0 6,-37 Q-2,-38 -14,-35 Z" fill="#fde047"/>
+              <path d="M12,-36 Q24,0 12,36 Q22,32 28,24 Q34,0 28,-24 Q22,-32 12,-36 Z" fill="#60a5fa"/>
+              <circle cx="0" cy="0" r="38" fill="none" stroke="#1e293b" stroke-width="2.5"/>
+            </g>
+            <!-- Green Ball with Stars -->
+            <g transform="translate(76, 102)">
+              <circle cx="0" cy="0" r="28" fill="#22c55e" stroke="#1e293b" stroke-width="2.5"/>
+              <polygon points="-8,-14 -5,-7 2,-7 -4,-3 -2,4 -8,0 -14,4 -12,-3 -18,-7 -11,-7" fill="#fef08a"/>
+              <polygon points="10,0 12,5 17,5 13,8 14,13 10,10 6,13 7,8 3,5 8,5" fill="#ffffff"/>
+              <circle cx="-10" cy="14" r="3.5" fill="#bbf7d0"/>
+            </g>
+          </svg>
+        `,
+
+        /* Q4 Left: 2 cute bicycles (pink/purple & green) */
+        q4_bikes: `
+          <svg viewBox="0 0 220 150" xmlns="http://www.w3.org/2000/svg" aria-label="兩台腳踏車">
+            <rect width="220" height="150" rx="14" fill="#faf5ff"/>
+            <!-- Back Green Bike -->
+            <g transform="translate(105, 48) scale(0.88)">
+              <circle cx="0" cy="40" r="20" fill="none" stroke="#1e293b" stroke-width="4.5"/>
+              <circle cx="0" cy="40" r="4" fill="#1e293b"/>
+              <circle cx="72" cy="40" r="20" fill="none" stroke="#1e293b" stroke-width="4.5"/>
+              <circle cx="72" cy="40" r="4" fill="#1e293b"/>
+              <path d="M0,40 L26,14 L60,14 L34,40 Z" fill="none" stroke="#16a34a" stroke-width="5" stroke-linejoin="round"/>
+              <line x1="72" y1="40" x2="56" y2="4" stroke="#16a34a" stroke-width="5" stroke-linecap="round"/>
+              <line x1="48" y1="4" x2="66" y2="4" stroke="#1e293b" stroke-width="4.5" stroke-linecap="round"/>
+              <line x1="20" y1="10" x2="34" y2="10" stroke="#1e293b" stroke-width="5" stroke-linecap="round"/>
+            </g>
+            <!-- Front Pink/Purple Bike -->
+            <g transform="translate(36, 68) scale(0.92)">
+              <circle cx="0" cy="40" r="21" fill="#ffffff" stroke="#1e293b" stroke-width="4.5"/>
+              <circle cx="0" cy="40" r="4" fill="#1e293b"/>
+              <circle cx="76" cy="40" r="21" fill="#ffffff" stroke="#1e293b" stroke-width="4.5"/>
+              <circle cx="76" cy="40" r="4" fill="#1e293b"/>
+              <path d="M0,40 L28,12 L62,14 L36,40 Z" fill="none" stroke="#ec4899" stroke-width="5.5" stroke-linejoin="round"/>
+              <line x1="76" y1="40" x2="58" y2="2" stroke="#a855f7" stroke-width="5.5" stroke-linecap="round"/>
+              <line x1="50" y1="2" x2="68" y2="2" stroke="#1e293b" stroke-width="4.5" stroke-linecap="round"/>
+              <line x1="21" y1="9" x2="36" y2="9" stroke="#1e293b" stroke-width="5" stroke-linecap="round"/>
+            </g>
+          </svg>
+        `,
+
+        /* Q4 Right: 2 cute yellow toy cars */
+        q4_cars: `
+          <svg viewBox="0 0 220 150" xmlns="http://www.w3.org/2000/svg" aria-label="兩台黃色小汽車">
+            <rect width="220" height="150" rx="14" fill="#fefce8"/>
+            <!-- Top-Left Yellow Car -->
+            <g transform="translate(30, 34)">
+              <path d="M16,28 L26,10 Q32,4 44,4 L64,4 Q74,4 80,14 L92,28 Z" fill="#fde047" stroke="#1e293b" stroke-width="2.5"/>
+              <path d="M30,24 L36,11 L52,11 L52,24 Z" fill="#bae6fd" stroke="#1e293b" stroke-width="2"/>
+              <path d="M57,24 L57,11 L70,11 L78,24 Z" fill="#bae6fd" stroke="#1e293b" stroke-width="2"/>
+              <rect x="6" y="26" width="96" height="24" rx="10" fill="#facc15" stroke="#1e293b" stroke-width="2.5"/>
+              <circle cx="96" cy="36" r="4" fill="#fef08a" stroke="#1e293b" stroke-width="1.5"/>
+              <circle cx="28" cy="50" r="11" fill="#334155" stroke="#1e293b" stroke-width="2.5"/>
+              <circle cx="28" cy="50" r="4.5" fill="#e2e8f0"/>
+              <circle cx="80" cy="50" r="11" fill="#334155" stroke="#1e293b" stroke-width="2.5"/>
+              <circle cx="80" cy="50" r="4.5" fill="#e2e8f0"/>
+            </g>
+            <!-- Bottom-Right Yellow Car -->
+            <g transform="translate(96, 80)">
+              <path d="M16,26 L26,9 Q32,4 44,4 L62,4 Q72,4 78,13 L90,26 Z" fill="#fde047" stroke="#1e293b" stroke-width="2.5"/>
+              <path d="M29,22 L35,10 L50,10 L50,22 Z" fill="#bae6fd" stroke="#1e293b" stroke-width="2"/>
+              <path d="M55,22 L55,10 L68,10 L76,22 Z" fill="#bae6fd" stroke="#1e293b" stroke-width="2"/>
+              <rect x="6" y="24" width="94" height="23" rx="10" fill="#eab308" stroke="#1e293b" stroke-width="2.5"/>
+              <circle cx="94" cy="34" r="4" fill="#fef08a" stroke="#1e293b" stroke-width="1.5"/>
+              <circle cx="28" cy="47" r="10.5" fill="#334155" stroke="#1e293b" stroke-width="2.5"/>
+              <circle cx="28" cy="47" r="4" fill="#e2e8f0"/>
+              <circle cx="78" cy="47" r="10.5" fill="#334155" stroke="#1e293b" stroke-width="2.5"/>
+              <circle cx="78" cy="47" r="4" fill="#e2e8f0"/>
+            </g>
+          </svg>
+        `,
+
+        /* Q5: 2 cute dolls sitting together */
+        q5_dolls: `
+          <svg viewBox="0 0 280 170" xmlns="http://www.w3.org/2000/svg" aria-label="兩個可愛的洋娃娃">
+            <rect width="280" height="170" rx="14" fill="#fef3c7"/>
+            <rect x="0" y="122" width="280" height="48" fill="#fde68a"/>
+            <!-- Doll 1 (Pink Dress + Pigtails) -->
+            <g transform="translate(92, 58)">
+              <!-- Pigtails -->
+              <circle cx="-26" cy="4" r="13" fill="#b45309" stroke="#1e293b" stroke-width="2.5"/>
+              <circle cx="26" cy="4" r="13" fill="#b45309" stroke="#1e293b" stroke-width="2.5"/>
+              <circle cx="-20" cy="-4" r="5" fill="#ec4899"/>
+              <circle cx="20" cy="-4" r="5" fill="#ec4899"/>
+              <!-- Head -->
+              <circle cx="0" cy="0" r="24" fill="#ffedd5" stroke="#1e293b" stroke-width="2.5"/>
+              <path d="M-22,-6 Q0,-26 22,-6 Q12,-14 0,-12 Q-12,-14 -22,-6 Z" fill="#b45309"/>
+              <!-- Face -->
+              <circle cx="-8" cy="2" r="3" fill="#1e293b"/>
+              <circle cx="8" cy="2" r="3" fill="#1e293b"/>
+              <circle cx="-13" cy="8" r="3.5" fill="#fda4af"/>
+              <circle cx="13" cy="8" r="3.5" fill="#fda4af"/>
+              <path d="M-5,10 Q0,15 5,10" fill="none" stroke="#be123c" stroke-width="2.2" stroke-linecap="round"/>
+              <!-- Pink Dress -->
+              <path d="M-16,24 L16,24 L28,72 L-28,72 Z" fill="#ec4899" stroke="#1e293b" stroke-width="2.5" stroke-linejoin="round"/>
+              <circle cx="0" cy="40" r="5" fill="#fbcfe8"/>
+              <!-- Arms & Legs -->
+              <rect x="-32" y="28" width="14" height="10" rx="5" fill="#ffedd5" stroke="#1e293b" stroke-width="2" transform="rotate(-20 -25 33)"/>
+              <rect x="18" y="28" width="14" height="10" rx="5" fill="#ffedd5" stroke="#1e293b" stroke-width="2" transform="rotate(20 25 33)"/>
+              <ellipse cx="-14" cy="80" rx="10" ry="7" fill="#f472b6" stroke="#1e293b" stroke-width="2"/>
+              <ellipse cx="14" cy="80" rx="10" ry="7" fill="#f472b6" stroke="#1e293b" stroke-width="2"/>
+            </g>
+            <!-- Doll 2 (Yellow & Blue Outfit) -->
+            <g transform="translate(188, 60)">
+              <!-- Hair -->
+              <circle cx="0" cy="-2" r="26" fill="#451a03" stroke="#1e293b" stroke-width="2.5"/>
+              <!-- Head -->
+              <circle cx="0" cy="2" r="23" fill="#ffedd5" stroke="#1e293b" stroke-width="2.5"/>
+              <path d="M-21,-6 Q0,-22 21,-6 Q8,-11 0,-9 Q-8,-11 -21,-6 Z" fill="#451a03"/>
+              <!-- Face -->
+              <circle cx="-8" cy="4" r="3" fill="#1e293b"/>
+              <circle cx="8" cy="4" r="3" fill="#1e293b"/>
+              <circle cx="-13" cy="10" r="3.5" fill="#fda4af"/>
+              <circle cx="13" cy="10" r="3.5" fill="#fda4af"/>
+              <path d="M-5,12 Q0,17 5,12" fill="none" stroke="#be123c" stroke-width="2.2" stroke-linecap="round"/>
+              <!-- Yellow Top -->
+              <rect x="-18" y="25" width="36" height="24" rx="8" fill="#facc15" stroke="#1e293b" stroke-width="2.5"/>
+              <!-- Blue Skirt/Shorts -->
+              <path d="M-20,46 L20,46 L26,70 L-26,70 Z" fill="#3b82f6" stroke="#1e293b" stroke-width="2.5" stroke-linejoin="round"/>
+              <!-- Arms & Shoes -->
+              <rect x="-32" y="29" width="14" height="10" rx="5" fill="#ffedd5" stroke="#1e293b" stroke-width="2" transform="rotate(-18 -25 34)"/>
+              <rect x="18" y="29" width="14" height="10" rx="5" fill="#ffedd5" stroke="#1e293b" stroke-width="2" transform="rotate(18 25 34)"/>
+              <ellipse cx="-14" cy="78" rx="10" ry="7" fill="#60a5fa" stroke="#1e293b" stroke-width="2"/>
+              <ellipse cx="14" cy="78" rx="10" ry="7" fill="#60a5fa" stroke="#1e293b" stroke-width="2"/>
+            </g>
+          </svg>
+        `,
+
+        /* Q6: Colorful assortment of toy building blocks on a bright play mat */
+        q6_blocks: `
+          <svg viewBox="0 0 280 170" xmlns="http://www.w3.org/2000/svg" aria-label="彩色積木組">
+            <rect width="280" height="170" rx="14" fill="#e0f2fe"/>
+            <!-- Play mat -->
+            <rect x="16" y="96" width="248" height="60" rx="16" fill="#fef08a" stroke="#eab308" stroke-width="2.5"/>
+            <!-- Green Long Block -->
+            <g transform="translate(154, 46)">
+              <rect x="0" y="10" width="84" height="32" rx="5" fill="#22c55e" stroke="#1e293b" stroke-width="2.5"/>
+              <rect x="10" y="2" width="14" height="8" rx="2" fill="#4ade80" stroke="#1e293b" stroke-width="2"/>
+              <rect x="35" y="2" width="14" height="8" rx="2" fill="#4ade80" stroke="#1e293b" stroke-width="2"/>
+              <rect x="60" y="2" width="14" height="8" rx="2" fill="#4ade80" stroke="#1e293b" stroke-width="2"/>
+            </g>
+            <!-- Purple Block -->
+            <g transform="translate(36, 72)">
+              <rect x="0" y="8" width="66" height="32" rx="5" fill="#a855f7" stroke="#1e293b" stroke-width="2.5"/>
+              <rect x="10" y="1" width="16" height="7" rx="2" fill="#c084fc" stroke="#1e293b" stroke-width="2"/>
+              <rect x="40" y="1" width="16" height="7" rx="2" fill="#c084fc" stroke="#1e293b" stroke-width="2"/>
+            </g>
+            <!-- Red Triangle Roof Block -->
+            <polygon points="112,110 144,62 176,110" fill="#ef4444" stroke="#1e293b" stroke-width="2.5" stroke-linejoin="round"/>
+            <!-- Blue Cube Block -->
+            <g transform="translate(76, 102)">
+              <rect x="0" y="8" width="44" height="34" rx="5" fill="#3b82f6" stroke="#1e293b" stroke-width="2.5"/>
+              <rect x="14" y="1" width="16" height="7" rx="2" fill="#60a5fa" stroke="#1e293b" stroke-width="2"/>
+            </g>
+            <!-- Orange/Yellow Block -->
+            <g transform="translate(166, 98)">
+              <rect x="0" y="8" width="68" height="36" rx="5" fill="#f97316" stroke="#1e293b" stroke-width="2.5"/>
+              <rect x="10" y="1" width="16" height="7" rx="2" fill="#fb923c" stroke="#1e293b" stroke-width="2"/>
+              <rect x="42" y="1" width="16" height="7" rx="2" fill="#fb923c" stroke="#1e293b" stroke-width="2"/>
+            </g>
+          </svg>
+        `,
+
+        /* Q7: 3 cute colorful robots standing in a row (green, red, blue) */
+        q7_robots: `
+          <svg viewBox="0 0 280 170" xmlns="http://www.w3.org/2000/svg" aria-label="三個彩色機器人">
+            <rect width="280" height="170" rx="14" fill="#fce7f3"/>
+            <rect x="0" y="136" width="280" height="34" fill="#fbcfe8"/>
+            <!-- Green Robot -->
+            <g transform="translate(60, 44)">
+              <line x1="0" y1="0" x2="0" y2="10" stroke="#1e293b" stroke-width="2.5"/>
+              <circle cx="0" cy="0" r="4.5" fill="#facc15" stroke="#1e293b" stroke-width="2"/>
+              <rect x="-18" y="10" width="36" height="28" rx="8" fill="#22c55e" stroke="#1e293b" stroke-width="2.5"/>
+              <circle cx="-7" cy="22" r="4" fill="#fff"/><circle cx="7" cy="22" r="4" fill="#fff"/>
+              <circle cx="-7" cy="22" r="2" fill="#1e293b"/><circle cx="7" cy="22" r="2" fill="#1e293b"/>
+              <path d="M-6,31 Q0,35 6,31" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+              <rect x="-21" y="41" width="42" height="38" rx="8" fill="#4ade80" stroke="#1e293b" stroke-width="2.5"/>
+              <circle cx="0" cy="58" r="7" fill="#fef08a" stroke="#1e293b" stroke-width="2"/>
+              <rect x="-30" y="45" width="9" height="26" rx="4" fill="#16a34a" stroke="#1e293b" stroke-width="2"/>
+              <rect x="21" y="45" width="9" height="26" rx="4" fill="#16a34a" stroke="#1e293b" stroke-width="2"/>
+              <rect x="-13" y="79" width="10" height="22" rx="4" fill="#15803d" stroke="#1e293b" stroke-width="2"/>
+              <rect x="3" y="79" width="10" height="22" rx="4" fill="#15803d" stroke="#1e293b" stroke-width="2"/>
+            </g>
+            <!-- Red Robot (Taller Center) -->
+            <g transform="translate(140, 32)">
+              <line x1="0" y1="0" x2="0" y2="12" stroke="#1e293b" stroke-width="2.5"/>
+              <circle cx="0" cy="0" r="5" fill="#38bdf8" stroke="#1e293b" stroke-width="2"/>
+              <rect x="-20" y="12" width="40" height="30" rx="10" fill="#ef4444" stroke="#1e293b" stroke-width="2.5"/>
+              <circle cx="-8" cy="25" r="4.5" fill="#fff"/><circle cx="8" cy="25" r="4.5" fill="#fff"/>
+              <circle cx="-8" cy="25" r="2" fill="#1e293b"/><circle cx="8" cy="25" r="2" fill="#1e293b"/>
+              <path d="M-7,35 Q0,39 7,35" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+              <rect x="-24" y="45" width="48" height="44" rx="8" fill="#f87171" stroke="#1e293b" stroke-width="2.5"/>
+              <rect x="-14" y="55" width="28" height="16" rx="4" fill="#fef08a" stroke="#1e293b" stroke-width="2"/>
+              <rect x="-34" y="49" width="10" height="28" rx="5" fill="#facc15" stroke="#1e293b" stroke-width="2"/>
+              <rect x="24" y="49" width="10" height="28" rx="5" fill="#facc15" stroke="#1e293b" stroke-width="2"/>
+              <rect x="-15" y="89" width="11" height="24" rx="4" fill="#b91c1c" stroke="#1e293b" stroke-width="2"/>
+              <rect x="4" y="89" width="11" height="24" rx="4" fill="#b91c1c" stroke="#1e293b" stroke-width="2"/>
+            </g>
+            <!-- Blue Robot -->
+            <g transform="translate(220, 44)">
+              <line x1="0" y1="0" x2="0" y2="10" stroke="#1e293b" stroke-width="2.5"/>
+              <circle cx="0" cy="0" r="4.5" fill="#ef4444" stroke="#1e293b" stroke-width="2"/>
+              <rect x="-18" y="10" width="36" height="28" rx="8" fill="#3b82f6" stroke="#1e293b" stroke-width="2.5"/>
+              <circle cx="-7" cy="22" r="4" fill="#fff"/><circle cx="7" cy="22" r="4" fill="#fff"/>
+              <circle cx="-7" cy="22" r="2" fill="#1e293b"/><circle cx="7" cy="22" r="2" fill="#1e293b"/>
+              <path d="M-6,31 Q0,35 6,31" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+              <rect x="-21" y="41" width="42" height="38" rx="8" fill="#60a5fa" stroke="#1e293b" stroke-width="2.5"/>
+              <rect x="-12" y="51" width="24" height="14" rx="4" fill="#e0f2fe" stroke="#1e293b" stroke-width="2"/>
+              <rect x="-30" y="45" width="9" height="26" rx="4" fill="#2563eb" stroke="#1e293b" stroke-width="2"/>
+              <rect x="21" y="45" width="9" height="26" rx="4" fill="#2563eb" stroke="#1e293b" stroke-width="2"/>
+              <rect x="-13" y="79" width="10" height="22" rx="4" fill="#1d4ed8" stroke="#1e293b" stroke-width="2"/>
+              <rect x="3" y="79" width="10" height="22" rx="4" fill="#1d4ed8" stroke="#1e293b" stroke-width="2"/>
+            </g>
+          </svg>
+        `,
+
+        /* Q8: 2 cute red toy cars driving on a curved gray road with green grass */
+        q8_cars: `
+          <svg viewBox="0 0 280 170" xmlns="http://www.w3.org/2000/svg" aria-label="兩台紅色小汽車在馬路上">
+            <rect width="280" height="170" rx="14" fill="#86efac"/>
+            <!-- Curved Gray Road -->
+            <path d="M-10,56 Q140,36 290,74 L290,126 Q140,86 -10,110 Z" fill="#64748b"/>
+            <path d="M-10,83 Q140,62 290,100" fill="none" stroke="#ffffff" stroke-width="4" stroke-dasharray="14 12"/>
+            <!-- Top Red Car -->
+            <g transform="translate(64, 24)">
+              <path d="M16,26 L26,10 Q32,4 44,4 L64,4 Q74,4 80,14 L92,26 Z" fill="#f87171" stroke="#1e293b" stroke-width="2.5"/>
+              <path d="M30,22 L36,10 L52,10 L52,22 Z" fill="#e0f2fe" stroke="#1e293b" stroke-width="2"/>
+              <path d="M57,22 L57,10 L70,10 L78,22 Z" fill="#e0f2fe" stroke="#1e293b" stroke-width="2"/>
+              <rect x="6" y="24" width="96" height="24" rx="10" fill="#ef4444" stroke="#1e293b" stroke-width="2.5"/>
+              <circle cx="96" cy="34" r="4" fill="#fef08a" stroke="#1e293b" stroke-width="1.5"/>
+              <circle cx="28" cy="48" r="11" fill="#1e293b"/>
+              <circle cx="28" cy="48" r="4.5" fill="#e2e8f0"/>
+              <circle cx="80" cy="48" r="11" fill="#1e293b"/>
+              <circle cx="80" cy="48" r="4.5" fill="#e2e8f0"/>
+            </g>
+            <!-- Bottom Red Car -->
+            <g transform="translate(132, 92)">
+              <path d="M16,26 L26,10 Q32,4 44,4 L64,4 Q74,4 80,14 L92,26 Z" fill="#f87171" stroke="#1e293b" stroke-width="2.5"/>
+              <path d="M30,22 L36,10 L52,10 L52,22 Z" fill="#e0f2fe" stroke="#1e293b" stroke-width="2"/>
+              <path d="M57,22 L57,10 L70,10 L78,22 Z" fill="#e0f2fe" stroke="#1e293b" stroke-width="2"/>
+              <rect x="6" y="24" width="96" height="24" rx="10" fill="#dc2626" stroke="#1e293b" stroke-width="2.5"/>
+              <circle cx="96" cy="34" r="4" fill="#fef08a" stroke="#1e293b" stroke-width="1.5"/>
+              <circle cx="28" cy="48" r="11" fill="#1e293b"/>
+              <circle cx="28" cy="48" r="4.5" fill="#e2e8f0"/>
+              <circle cx="80" cy="48" r="11" fill="#1e293b"/>
+              <circle cx="80" cy="48" r="4.5" fill="#e2e8f0"/>
+            </g>
+          </svg>
+        `,
+
+        /* Q9: Cheerful girl and boy in toy shop ("How are you?" -> "?") */
+        q9_scene: `
+          <svg viewBox="0 0 340 190" xmlns="http://www.w3.org/2000/svg" aria-label="玩具店裡女孩問 How are you?">
+            <!-- Warm Toy Shop Background -->
+            <rect width="340" height="190" rx="14" fill="#fef3c7"/>
+            <!-- Toy Shelf -->
+            <rect x="112" y="68" width="116" height="10" rx="4" fill="#d97706"/>
+            <rect x="128" y="46" width="22" height="22" rx="4" fill="#60a5fa" stroke="#1e293b" stroke-width="2"/>
+            <circle cx="174" cy="54" r="13" fill="#f472b6" stroke="#1e293b" stroke-width="2"/>
+            <rect x="196" y="48" width="20" height="20" rx="4" fill="#4ade80" stroke="#1e293b" stroke-width="2"/>
+
+            <!-- Yellow Speech Bubble: How are you? -->
+            <g transform="translate(14, 12)">
+              <rect x="0" y="0" width="166" height="44" rx="20" fill="#facc15" stroke="#ca8a04" stroke-width="2.5"/>
+              <polygon points="52,43 66,58 74,43" fill="#facc15" stroke="#ca8a04" stroke-width="2.5" stroke-linejoin="round"/>
+              <line x1="54" y1="43" x2="72" y2="43" stroke="#facc15" stroke-width="4"/>
+              <text x="83" y="29" text-anchor="middle" font-size="18" font-weight="800" fill="#1e293b" font-family="sans-serif">How are you?</text>
+            </g>
+
+            <!-- Reply Bubble: ? -->
+            <g transform="translate(244, 14)">
+              <rect x="0" y="0" width="76" height="44" rx="20" fill="#ffffff" stroke="#0ea5e9" stroke-width="3" stroke-dasharray="6 4"/>
+              <polygon points="24,43 16,58 38,43" fill="#ffffff" stroke="#0ea5e9" stroke-width="2.5"/>
+              <line x1="25" y1="43" x2="36" y2="43" stroke="#ffffff" stroke-width="4"/>
+              <text x="38" y="31" text-anchor="middle" font-size="24" font-weight="900" fill="#0ea5e9" font-family="sans-serif">?</text>
+            </g>
+
+            <!-- Girl (Left) -->
+            <g transform="translate(86, 114)">
+              <path d="M-28,-8 Q-32,36 -18,40 L18,40 Q32,36 28,-8 Z" fill="#451a03"/>
+              <circle cx="0" cy="0" r="24" fill="#ffedd5" stroke="#1e293b" stroke-width="2.5"/>
+              <path d="M-22,-8 Q0,-26 22,-8" fill="#451a03"/>
+              <circle cx="-8" cy="2" r="3" fill="#1e293b"/><circle cx="8" cy="2" r="3" fill="#1e293b"/>
+              <path d="M-6,11 Q0,17 6,11" fill="none" stroke="#be123c" stroke-width="2.2" stroke-linecap="round"/>
+              <!-- Shirt -->
+              <path d="M-22,26 L22,26 L28,76 L-28,76 Z" fill="#f472b6" stroke="#1e293b" stroke-width="2.5"/>
+              <!-- Waving Hand -->
+              <path d="M22,42 Q38,28 42,16" fill="none" stroke="#ffedd5" stroke-width="10" stroke-linecap="round"/>
+              <circle cx="42" cy="14" r="7" fill="#ffedd5" stroke="#1e293b" stroke-width="2"/>
+            </g>
+
+            <!-- Boy (Right) -->
+            <g transform="translate(248, 114)">
+              <circle cx="0" cy="0" r="24" fill="#ffedd5" stroke="#1e293b" stroke-width="2.5"/>
+              <path d="M-24,-4 Q-16,-28 8,-26 Q26,-22 24,-4 Q10,-14 -6,-10 Z" fill="#facc15" stroke="#1e293b" stroke-width="2"/>
+              <circle cx="-8" cy="2" r="3" fill="#1e293b"/><circle cx="8" cy="2" r="3" fill="#1e293b"/>
+              <path d="M-6,11 Q0,17 6,11" fill="none" stroke="#be123c" stroke-width="2.2" stroke-linecap="round"/>
+              <!-- Shirt -->
+              <path d="M-22,26 L22,26 L28,76 L-28,76 Z" fill="#38bdf8" stroke="#1e293b" stroke-width="2.5"/>
+              <!-- Waving Hand -->
+              <path d="M-22,42 Q-38,28 -42,16" fill="none" stroke="#ffedd5" stroke-width="10" stroke-linecap="round"/>
+              <circle cx="-42" cy="14" r="7" fill="#ffedd5" stroke="#1e293b" stroke-width="2"/>
+            </g>
+          </svg>
+        `,
+
+        /* Q10: Cheerful boy and girl holding colorful diamond kites ("What are they?" -> "?") */
+        q10_scene: `
+          <svg viewBox="0 0 340 190" xmlns="http://www.w3.org/2000/svg" aria-label="男孩指著風箏問 What are they?">
+            <!-- Bright Striped Room Background -->
+            <rect width="340" height="190" rx="14" fill="#e0f2fe"/>
+            <rect x="40" y="0" width="24" height="190" fill="#bae6fd" opacity="0.45"/>
+            <rect x="110" y="0" width="24" height="190" fill="#bae6fd" opacity="0.45"/>
+            <rect x="180" y="0" width="24" height="190" fill="#bae6fd" opacity="0.45"/>
+            <rect x="250" y="0" width="24" height="190" fill="#bae6fd" opacity="0.45"/>
+
+            <!-- Yellow Speech Bubble: What are they? -->
+            <g transform="translate(14, 12)">
+              <rect x="0" y="0" width="174" height="44" rx="20" fill="#facc15" stroke="#ca8a04" stroke-width="2.5"/>
+              <polygon points="50,43 62,58 72,43" fill="#facc15" stroke="#ca8a04" stroke-width="2.5" stroke-linejoin="round"/>
+              <line x1="52" y1="43" x2="70" y2="43" stroke="#facc15" stroke-width="4"/>
+              <text x="87" y="29" text-anchor="middle" font-size="18" font-weight="800" fill="#1e293b" font-family="sans-serif">What are they?</text>
+            </g>
+
+            <!-- Reply Bubble: ? -->
+            <g transform="translate(248, 14)">
+              <rect x="0" y="0" width="76" height="44" rx="20" fill="#ffffff" stroke="#0ea5e9" stroke-width="3" stroke-dasharray="6 4"/>
+              <polygon points="24,43 16,58 38,43" fill="#ffffff" stroke="#0ea5e9" stroke-width="2.5"/>
+              <line x1="25" y1="43" x2="36" y2="43" stroke="#ffffff" stroke-width="4"/>
+              <text x="38" y="31" text-anchor="middle" font-size="24" font-weight="900" fill="#0ea5e9" font-family="sans-serif">?</text>
+            </g>
+
+            <!-- 3 Colorful Diamond Kites in Center -->
+            <!-- Purple Kite -->
+            <g transform="translate(132, 102) rotate(-14)">
+              <line x1="0" y1="28" x2="0" y2="62" stroke="#7e22ce" stroke-width="2.5"/>
+              <polygon points="0,-28 20,0 0,28 -20,0" fill="#a855f7" stroke="#1e293b" stroke-width="2.2"/>
+              <line x1="0" y1="-28" x2="0" y2="28" stroke="#fff" stroke-width="1.5"/>
+              <line x1="-20" y1="0" x2="20" y2="0" stroke="#fff" stroke-width="1.5"/>
+            </g>
+            <!-- Orange Kite -->
+            <g transform="translate(174, 96) rotate(4)">
+              <line x1="0" y1="28" x2="0" y2="62" stroke="#ea580c" stroke-width="2.5"/>
+              <polygon points="0,-28 20,0 0,28 -20,0" fill="#fb923c" stroke="#1e293b" stroke-width="2.2"/>
+              <line x1="0" y1="-28" x2="0" y2="28" stroke="#fff" stroke-width="1.5"/>
+              <line x1="-20" y1="0" x2="20" y2="0" stroke="#fff" stroke-width="1.5"/>
+            </g>
+            <!-- Yellow Kite -->
+            <g transform="translate(212, 104) rotate(18)">
+              <line x1="0" y1="26" x2="0" y2="56" stroke="#ca8a04" stroke-width="2.5"/>
+              <polygon points="0,-24 18,0 0,24 -18,0" fill="#fde047" stroke="#1e293b" stroke-width="2.2"/>
+              <line x1="0" y1="-24" x2="0" y2="24" stroke="#1e293b" stroke-width="1.5"/>
+              <line x1="-18" y1="0" x2="18" y2="0" stroke="#1e293b" stroke-width="1.5"/>
+            </g>
+
+            <!-- Boy (Left) -->
+            <g transform="translate(66, 120)">
+              <circle cx="0" cy="0" r="22" fill="#ffedd5" stroke="#1e293b" stroke-width="2.5"/>
+              <path d="M-22,-4 Q-12,-26 10,-24 Q24,-18 22,-4 Q6,-12 -8,-8 Z" fill="#c2410c" stroke="#1e293b" stroke-width="2"/>
+              <circle cx="-7" cy="2" r="2.8" fill="#1e293b"/><circle cx="7" cy="2" r="2.8" fill="#1e293b"/>
+              <path d="M-5,10 Q0,15 5,10" fill="none" stroke="#be123c" stroke-width="2" stroke-linecap="round"/>
+              <path d="M-20,24 L20,24 L24,70 L-24,70 Z" fill="#eab308" stroke="#1e293b" stroke-width="2.5"/>
+            </g>
+
+            <!-- Girl (Right) -->
+            <g transform="translate(274, 120)">
+              <path d="M-24,-6 Q-28,28 -16,32 L16,32 Q28,28 24,-6 Z" fill="#451a03"/>
+              <circle cx="0" cy="0" r="22" fill="#ffedd5" stroke="#1e293b" stroke-width="2.5"/>
+              <path d="M-20,-8 Q0,-24 20,-8" fill="#451a03"/>
+              <circle cx="-7" cy="2" r="2.8" fill="#1e293b"/><circle cx="7" cy="2" r="2.8" fill="#1e293b"/>
+              <path d="M-5,10 Q0,15 5,10" fill="none" stroke="#be123c" stroke-width="2" stroke-linecap="round"/>
+              <path d="M-20,24 L20,24 L24,70 L-24,70 Z" fill="#f472b6" stroke="#1e293b" stroke-width="2.5"/>
+            </g>
+          </svg>
+        `
+      };
+
+      /* =========================================================
+         Quiz Data (10 Questions — Super Star Level 1 Unit 2 p.21)
+      ========================================================= */
+      const SECTIONS = [
+        {
+          id: 'part1',
+          badge: 'Part 1',
+          enTitle: 'Listen and circle',
+          zhTitle: '第 1–4 題：聽一聽，點選正確的圖片'
+        },
+        {
+          id: 'part2',
+          badge: 'Part 2',
+          enTitle: 'Listen and choose',
+          zhTitle: '第 5–8 題：聽一聽，選出符合圖片的 a 或 b'
+        },
+        {
+          id: 'part3',
+          badge: 'Part 3',
+          enTitle: 'Listen and choose the reply',
+          zhTitle: '第 9–10 題：看圖聽問題，選出正確的回答 a 或 b'
+        }
+      ];
+
+      const QUESTIONS = [
+        {
+          id: 1,
+          section: 'part1',
+          type: 'image-pair',
+          speechSegments: ["Number 1. They're balls."],
+          leftSvg: SVGS.q1_balls,
+          rightSvg: SVGS.q1_blocks,
+          correct: 'left',
+          answerLabel: '左圖（球 balls）'
+        },
+        {
+          id: 2,
+          section: 'part1',
+          type: 'image-pair',
+          speechSegments: ["Number 2. They're robots."],
+          leftSvg: SVGS.q2_kites,
+          rightSvg: SVGS.q2_robots,
+          correct: 'right',
+          answerLabel: '右圖（機器人 robots）'
+        },
+        {
+          id: 3,
+          section: 'part1',
+          type: 'image-pair',
+          speechSegments: ["Number 3. They're tops."],
+          leftSvg: SVGS.q3_tops,
+          rightSvg: SVGS.q3_balls,
+          correct: 'left',
+          answerLabel: '左圖（陀螺 tops）'
+        },
+        {
+          id: 4,
+          section: 'part1',
+          type: 'image-pair',
+          speechSegments: ["Number 4. They're bikes."],
+          leftSvg: SVGS.q4_bikes,
+          rightSvg: SVGS.q4_cars,
+          correct: 'left',
+          answerLabel: '左圖（腳踏車 bikes）'
+        },
+        {
+          id: 5,
+          section: 'part2',
+          type: 'ab',
+          speechSegments: ["Number 5.", "a. They're dolls.", "b. They're bikes."],
+          svg: SVGS.q5_dolls,
+          correct: 'a',
+          answerLabel: "a（They're dolls.）"
+        },
+        {
+          id: 6,
+          section: 'part2',
+          type: 'ab',
+          speechSegments: ["Number 6.", "a. They're tops.", "b. They're blocks."],
+          svg: SVGS.q6_blocks,
+          correct: 'b',
+          answerLabel: "b（They're blocks.）"
+        },
+        {
+          id: 7,
+          section: 'part2',
+          type: 'ab',
+          speechSegments: ["Number 7.", "a. They're cars.", "b. They're robots."],
+          svg: SVGS.q7_robots,
+          correct: 'b',
+          answerLabel: "b（They're robots.）"
+        },
+        {
+          id: 8,
+          section: 'part2',
+          type: 'ab',
+          speechSegments: ["Number 8.", "a. They're cars.", "b. They're kites."],
+          svg: SVGS.q8_cars,
+          correct: 'a',
+          answerLabel: "a（They're cars.）"
+        },
+        {
+          id: 9,
+          section: 'part3',
+          type: 'sentence-ab',
+          speechSegments: ["Number 9. How are you?"],
+          svg: SVGS.q9_scene,
+          options: [
+            { value: 'a', text: "They're kites." },
+            { value: 'b', text: "I'm fine. Thank you." }
+          ],
+          correct: 'b',
+          answerLabel: "b（I'm fine. Thank you.）"
+        },
+        {
+          id: 10,
+          section: 'part3',
+          type: 'sentence-ab',
+          speechSegments: ["Number 10. What are they?"],
+          svg: SVGS.q10_scene,
+          options: [
+            { value: 'a', text: "They're kites." },
+            { value: 'b', text: "I'm fine. Thank you." }
+          ],
+          correct: 'a',
+          answerLabel: "a（They're kites.）"
+        }
+      ];
+
+      /* =========================================================
+         Application State
+      ========================================================= */
+      let activeQuestionIds = QUESTIONS.map(q => q.id);
+      let masteredIds = new Set();
+      let userAnswers = {}; // { [questionId]: 'left'|'right'|'a'|'b' }
+      let isSubmitted = false;
+      let isRetryMode = false;
+      let speechRate = 0.85; // 0.85 (normal) or 0.65 (slow)
+      let selectedVoice = null;
+      let speechSessionId = 0;
+      let activeAudioBtn = null;
+      let speechTimeout = null;
+      let toastTimer = null;
+
+      /* =========================================================
+         DOM References
+      ========================================================= */
+      const quizContainer = document.getElementById('quizContainer');
+      const progressPill = document.getElementById('progressPill');
+      const speedToggleBtn = document.getElementById('speedToggleBtn');
+      const retryBanner = document.getElementById('retryBanner');
+      const retryBannerText = document.getElementById('retryBannerText');
+      const resultCard = document.getElementById('resultCard');
+      const resultEmoji = document.getElementById('resultEmoji');
+      const resultScore = document.getElementById('resultScore');
+      const resultSubtitle = document.getElementById('resultSubtitle');
+      const resultDetail = document.getElementById('resultDetail');
+      const resultActions = document.getElementById('resultActions');
+      const submitBtn = document.getElementById('submitBtn');
+      const parentToggleBtn = document.getElementById('parentToggleBtn');
+      const parentTableBox = document.getElementById('parentTableBox');
+      const parentTableBody = document.getElementById('parentTableBody');
+      const toastEl = document.getElementById('toast');
+
+      /* =========================================================
+         Web Speech API Voice Setup & Playback
+      ========================================================= */
+      function pickBestEnglishVoice() {
+        if (!('speechSynthesis' in window)) return null;
+        const voices = window.speechSynthesis.getVoices();
+        if (!voices || !voices.length) return null;
+
+        // Prioritize clear en-US voices across iOS / Android / Desktop
+        const preferredNames = [
+          'Samantha', 'Karen', 'Google US English', 'Aaron', 'Nicky', 'Microsoft Aria', 'Microsoft Jenny'
+        ];
+        for (const name of preferredNames) {
+          const match = voices.find(v => v.name && v.name.includes(name) && v.lang.toLowerCase().startsWith('en'));
+          if (match) return match;
+        }
+        return (
+          voices.find(v => v.lang === 'en-US') ||
+          voices.find(v => v.lang.toLowerCase().startsWith('en-us')) ||
+          voices.find(v => v.lang.toLowerCase().startsWith('en')) ||
+          null
+        );
+      }
+
+      if ('speechSynthesis' in window) {
+        selectedVoice = pickBestEnglishVoice();
+        window.speechSynthesis.onvoiceschanged = function () {
+          selectedVoice = pickBestEnglishVoice();
+        };
+      }
+
+      function stopAllSpeech() {
+        speechSessionId++;
+        if (speechTimeout) {
+          clearTimeout(speechTimeout);
+          speechTimeout = null;
+        }
+        if ('speechSynthesis' in window) {
+          try {
+            window.speechSynthesis.cancel();
+          } catch (e) {
+            // Ignore synthesis cancel errors
+          }
+        }
+        if (activeAudioBtn) {
+          activeAudioBtn.classList.remove('playing');
+          activeAudioBtn.innerHTML = '🔊 播放題目';
+          activeAudioBtn = null;
+        }
+      }
+
+      function playQuestionAudio(question, btnEl) {
+        if (!('speechSynthesis' in window)) {
+          showToast('此瀏覽器不支援語音播放，請改用手機內建瀏覽器喔！', true);
+          return;
+        }
+
+        const wasSamePlaying = activeAudioBtn === btnEl;
+        stopAllSpeech();
+        if (wasSamePlaying) return;
+
+        const currentSession = speechSessionId;
+        activeAudioBtn = btnEl;
+        btnEl.classList.add('playing');
+        btnEl.innerHTML = '🔊 播放中...';
+
+        if (!selectedVoice) {
+          selectedVoice = pickBestEnglishVoice();
+        }
+
+        const segments = question.speechSegments;
+
+        function speakSegment(index) {
+          if (currentSession !== speechSessionId) return;
+          if (index >= segments.length) {
+            if (activeAudioBtn === btnEl) {
+              btnEl.classList.remove('playing');
+              btnEl.innerHTML = '🔊 播放題目';
+              activeAudioBtn = null;
+            }
+            return;
+          }
+
+          try {
+            const utter = new SpeechSynthesisUtterance(segments[index]);
+            utter.lang = 'en-US';
+            utter.rate = speechRate;
+            utter.pitch = 1.02;
+            if (selectedVoice) utter.voice = selectedVoice;
+
+            utter.onend = function () {
+              if (currentSession !== speechSessionId) return;
+              if (index + 1 < segments.length) {
+                // ~500ms clear pause between segments (e.g., Part 2 a / b)
+                speechTimeout = setTimeout(function () {
+                  speakSegment(index + 1);
+                }, 520);
+              } else {
+                speakSegment(index + 1);
+              }
+            };
+
+            utter.onerror = function () {
+              if (currentSession !== speechSessionId) return;
+              stopAllSpeech();
+            };
+
+            window.speechSynthesis.speak(utter);
+          } catch (err) {
+            stopAllSpeech();
+            showToast('語音播放發生問題，請再按一次試試看！', true);
+          }
+        }
+
+        // Start first utterance synchronously inside click event for iOS Safari compatibility
+        speakSegment(0);
+      }
+
+      /* =========================================================
+         Toast Helper
+      ========================================================= */
+      function showToast(message, isWarn) {
+        toastEl.textContent = message;
+        toastEl.className = 'toast show' + (isWarn ? ' warn' : '');
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () {
+          toastEl.classList.remove('show');
+        }, 2800);
+      }
+
+      /* =========================================================
+         Render Quiz Structure
+      ========================================================= */
+      function renderQuiz() {
+        quizContainer.innerHTML = '';
+
+        SECTIONS.forEach(function (sec) {
+          const secEl = document.createElement('section');
+          secEl.className = 'quiz-section';
+          secEl.id = 'section-' + sec.id;
+
+          secEl.innerHTML = `
+            <div class="section-header">
+              <span class="section-num">${sec.badge}</span>
+              <div class="section-title-wrap">
+                <span class="section-en">${sec.enTitle}</span>
+                <span class="section-zh">${sec.zhTitle}</span>
+              </div>
+            </div>
+          `;
+
+          const secQuestions = QUESTIONS.filter(q => q.section === sec.id);
+          secQuestions.forEach(function (q) {
+            const card = document.createElement('article');
+            card.className = 'question-card';
+            card.id = 'q-card-' + q.id;
+
+            let bodyHtml = '';
+            if (q.type === 'image-pair') {
+              bodyHtml = `
+                <div class="part1-grid">
+                  <button type="button" class="img-option-btn" data-qid="${q.id}" data-val="left" aria-label="第 ${q.id} 題左邊圖片">
+                    <span class="check-badge">✓</span>
+                    ${q.leftSvg}
+                  </button>
+                  <button type="button" class="img-option-btn" data-qid="${q.id}" data-val="right" aria-label="第 ${q.id} 題右邊圖片">
+                    <span class="check-badge">✓</span>
+                    ${q.rightSvg}
+                  </button>
+                </div>
+              `;
+            } else if (q.type === 'ab') {
+              bodyHtml = `
+                <div class="part2-figure">${q.svg}</div>
+                <div class="ab-grid">
+                  <button type="button" class="ab-btn" data-qid="${q.id}" data-val="a">a</button>
+                  <button type="button" class="ab-btn" data-qid="${q.id}" data-val="b">b</button>
+                </div>
+              `;
+            } else if (q.type === 'sentence-ab') {
+              bodyHtml = `
+                <div class="part3-figure">${q.svg}</div>
+                <div class="sentence-options">
+                  ${q.options.map(opt => `
+                    <button type="button" class="sentence-btn" data-qid="${q.id}" data-val="${opt.value}">
+                      <span class="opt-letter">${opt.value}</span>
+                      <span>${opt.text}</span>
+                    </button>
+                  `).join('')}
+                </div>
+              `;
+            }
+
+            card.innerHTML = `
+              <div class="q-header">
+                <div class="q-left">
+                  <div class="q-number">${q.id}</div>
+                  <button type="button" class="audio-btn" id="audio-btn-${q.id}">🔊 播放題目</button>
+                </div>
+                <span class="status-badge" id="status-badge-${q.id}"></span>
+              </div>
+              ${bodyHtml}
+            `;
+
+            // Attach audio handler
+            const audioBtn = card.querySelector('#audio-btn-' + q.id);
+            audioBtn.addEventListener('click', function () {
+              playQuestionAudio(q, audioBtn);
+            });
+
+            // Attach option handlers
+            const optBtns = card.querySelectorAll('[data-qid]');
+            optBtns.forEach(function (btn) {
+              btn.addEventListener('click', function () {
+                if (isSubmitted) return;
+                selectAnswer(q.id, btn.getAttribute('data-val'));
+              });
+            });
+
+            secEl.appendChild(card);
+          });
+
+          quizContainer.appendChild(secEl);
+        });
+
+        renderParentTable();
+        updateVisibilityAndProgress();
+      }
+
+      function renderParentTable() {
+        parentTableBody.innerHTML = QUESTIONS.map(function (q) {
+          const scriptText = q.speechSegments.join(' / ');
+          return `
+            <tr>
+              <td><strong>第 ${q.id} 題</strong></td>
+              <td>${scriptText}</td>
+              <td><span class="ans-chip">${q.answerLabel}</span></td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      /* =========================================================
+         Selection & UI Updates
+      ========================================================= */
+      function selectAnswer(qId, val) {
+        userAnswers[qId] = val;
+
+        const card = document.getElementById('q-card-' + qId);
+        card.classList.remove('needs-attention');
+
+        const buttons = card.querySelectorAll('[data-qid]');
+        buttons.forEach(function (btn) {
+          if (btn.getAttribute('data-val') === val) {
+            btn.classList.add('selected');
+          } else {
+            btn.classList.remove('selected');
+          }
+        });
+
+        updateProgressPill();
+      }
+
+      function updateProgressPill() {
+        const totalActive = activeQuestionIds.length;
+        const answeredCount = activeQuestionIds.filter(id => Boolean(userAnswers[id])).length;
+
+        if (isRetryMode) {
+          const remaining = totalActive - answeredCount;
+          progressPill.classList.add('retry-mode');
+          progressPill.textContent = remaining > 0
+            ? `錯題重做模式：剩餘 ${remaining} 題`
+            : `錯題重做模式：已選完 ${totalActive} 題`;
+        } else {
+          progressPill.classList.remove('retry-mode');
+          progressPill.textContent = `已作答 ${answeredCount} / ${totalActive} 題`;
+        }
+      }
+
+      function updateVisibilityAndProgress() {
+        // Show only active questions
+        QUESTIONS.forEach(function (q) {
+          const card = document.getElementById('q-card-' + q.id);
+          const isActive = activeQuestionIds.includes(q.id);
+          card.classList.toggle('hidden', !isActive);
+        });
+
+        // Hide section headers if none of their questions are active
+        SECTIONS.forEach(function (sec) {
+          const secEl = document.getElementById('section-' + sec.id);
+          const hasActive = QUESTIONS.some(q => q.section === sec.id && activeQuestionIds.includes(q.id));
+          secEl.classList.toggle('hidden', !hasActive);
+        });
+
+        if (isRetryMode) {
+          retryBanner.classList.add('visible');
+          retryBannerText.textContent = `錯題重做模式：只剩下 ${activeQuestionIds.length} 題，仔細再聽一次喔！`;
+        } else {
+          retryBanner.classList.remove('visible');
+        }
+
+        updateProgressPill();
+      }
+
+      /* =========================================================
+         Deferred Grading ("交卷批改")
+      ========================================================= */
+      function handleSubmit() {
+        stopAllSpeech();
+
+        // Check for unanswered active questions
+        const unansweredIds = activeQuestionIds.filter(id => !userAnswers[id]);
+        if (unansweredIds.length > 0) {
+          const firstMissing = unansweredIds[0];
+          const missingText = unansweredIds.length <= 3
+            ? `還有第 ${unansweredIds.join('、')} 題還沒選喔！`
+            : `還有第 ${firstMissing} 題等 ${unansweredIds.length} 題還沒選喔！`;
+          showToast(missingText, true);
+
+          const targetCard = document.getElementById('q-card-' + firstMissing);
+          if (targetCard) {
+            targetCard.classList.remove('needs-attention');
+            void targetCard.offsetWidth; // restart animation
+            targetCard.classList.add('needs-attention');
+            targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+          return;
+        }
+
+        isSubmitted = true;
+        submitBtn.classList.add('hidden');
+
+        let roundCorrect = 0;
+        const wrongIdsThisRound = [];
+
+        activeQuestionIds.forEach(function (qId) {
+          const q = QUESTIONS.find(item => item.id === qId);
+          const picked = userAnswers[qId];
+          const isCorrect = picked === q.correct;
+
+          const card = document.getElementById('q-card-' + qId);
+          const badge = document.getElementById('status-badge-' + qId);
+          const buttons = card.querySelectorAll('[data-qid]');
+
+          card.classList.remove('graded-correct', 'graded-wrong');
+          badge.className = 'status-badge';
+
+          if (isCorrect) {
+            roundCorrect++;
+            masteredIds.add(qId);
+            card.classList.add('graded-correct');
+            badge.classList.add('correct');
+            badge.textContent = '✓ 答對';
+          } else {
+            wrongIdsThisRound.push(qId);
+            card.classList.add('graded-wrong');
+            badge.classList.add('wrong');
+            badge.textContent = '✗ 答錯';
+          }
+
+          // Lock buttons & style chosen answer ONLY (do not spoil correct answer on wrong ones)
+          buttons.forEach(function (btn) {
+            btn.disabled = true;
+            btn.classList.remove('selected', 'correct-picked', 'wrong-picked');
+            const val = btn.getAttribute('data-val');
+            if (val === picked) {
+              btn.classList.add(isCorrect ? 'correct-picked' : 'wrong-picked');
+              const checkBadge = btn.querySelector('.check-badge');
+              if (checkBadge) checkBadge.textContent = isCorrect ? '✓' : '✗';
+            }
+          });
+        });
+
+        renderResultSummary(roundCorrect, wrongIdsThisRound);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      function renderResultSummary(roundCorrect, wrongIds) {
+        const allMastered = wrongIds.length === 0 && masteredIds.size === QUESTIONS.length;
+        const totalRound = activeQuestionIds.length;
+
+        resultCard.classList.add('visible');
+        resultCard.classList.toggle('has-errors', wrongIds.length > 0);
+
+        // Collapse parent helper by default on every new grade
+        parentTableBox.classList.remove('open');
+        parentToggleBtn.textContent = '👀 家長看解答與語音稿';
+
+        if (!isRetryMode) {
+          const score = roundCorrect * 10;
+          resultScore.textContent = `${score} 分`;
+          if (allMastered) {
+            resultEmoji.textContent = '🏆';
+            resultSubtitle.textContent = '太厲害了！滿分 100 分！';
+            resultDetail.textContent = '10 題全部答對，Unit 2 已經完全學會囉！';
+            launchConfetti();
+          } else if (score >= 80) {
+            resultEmoji.textContent = '🌟';
+            resultSubtitle.textContent = `表現很棒！答對 ${roundCorrect} / 10 題`;
+            resultDetail.textContent = `還有 ${wrongIds.length} 題答錯（第 ${wrongIds.join('、')} 題），再挑戰一次就滿分了！`;
+          } else {
+            resultEmoji.textContent = '💪';
+            resultSubtitle.textContent = `答對 ${roundCorrect} / 10 題，加油！`;
+            resultDetail.textContent = `第 ${wrongIds.join('、')} 題再聽一次語音，重新練習一定會更棒！`;
+          }
+        } else {
+          if (allMastered) {
+            resultEmoji.textContent = '🎉';
+            resultScore.textContent = '全部過關！';
+            resultSubtitle.textContent = `這次重做的 ${totalRound} 題全部答對了！`;
+            resultDetail.textContent = '總進度：10 / 10 題全部掌握，太棒了！';
+            launchConfetti();
+          } else {
+            resultEmoji.textContent = '🔥';
+            resultScore.textContent = `改對 ${roundCorrect} / ${totalRound} 題`;
+            resultSubtitle.textContent = `總進度：已掌握 ${masteredIds.size} / 10 題`;
+            resultDetail.textContent = `還有第 ${wrongIds.join('、')} 題還沒答對，我們再試一次！`;
+          }
+        }
+
+        // Action Buttons
+        resultActions.innerHTML = '';
+        if (wrongIds.length > 0) {
+          const retryBtn = document.createElement('button');
+          retryBtn.type = 'button';
+          retryBtn.className = 'btn-retry-wrong';
+          retryBtn.textContent = `🔄 只重做錯的題（${wrongIds.length} 題）`;
+          retryBtn.addEventListener('click', function () {
+            startRetryWrong(wrongIds);
+          });
+          resultActions.appendChild(retryBtn);
+        }
+
+        const restartBtn = document.createElement('button');
+        restartBtn.type = 'button';
+        restartBtn.className = 'btn-restart-all';
+        restartBtn.textContent = '重新考全部 10 題';
+        restartBtn.addEventListener('click', resetFullQuiz);
+        resultActions.appendChild(restartBtn);
+      }
+
+      /* =========================================================
+         Retry Wrong Questions Only / Full Reset
+      ========================================================= */
+      function unlockQuestionCards(ids) {
+        ids.forEach(function (qId) {
+          delete userAnswers[qId];
+          const card = document.getElementById('q-card-' + qId);
+          const badge = document.getElementById('status-badge-' + qId);
+          const buttons = card.querySelectorAll('[data-qid]');
+
+          card.classList.remove('graded-correct', 'graded-wrong', 'needs-attention');
+          badge.className = 'status-badge';
+          badge.textContent = '';
+
+          buttons.forEach(function (btn) {
+            btn.disabled = false;
+            btn.classList.remove('selected', 'correct-picked', 'wrong-picked');
+            const checkBadge = btn.querySelector('.check-badge');
+            if (checkBadge) checkBadge.textContent = '✓';
+          });
+        });
+      }
+
+      function startRetryWrong(wrongIds) {
+        stopAllSpeech();
+        isRetryMode = true;
+        isSubmitted = false;
+        activeQuestionIds = [...wrongIds];
+
+        unlockQuestionCards(activeQuestionIds);
+        resultCard.classList.remove('visible');
+        submitBtn.classList.remove('hidden');
+        submitBtn.textContent = '✅ 交卷批改錯題';
+
+        updateVisibilityAndProgress();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        showToast(`進入錯題重做模式，共 ${wrongIds.length} 題！`, false);
+      }
+
+      function resetFullQuiz() {
+        stopAllSpeech();
+        isRetryMode = false;
+        isSubmitted = false;
+        masteredIds.clear();
+        userAnswers = {};
+        activeQuestionIds = QUESTIONS.map(q => q.id);
+
+        unlockQuestionCards(activeQuestionIds);
+        resultCard.classList.remove('visible');
+        submitBtn.classList.remove('hidden');
+        submitBtn.textContent = '✅ 交卷批改';
+
+        updateVisibilityAndProgress();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      /* =========================================================
+         Lightweight Confetti Celebration
+      ========================================================= */
+      function launchConfetti() {
+        const canvas = document.getElementById('confettiCanvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const colors = ['#16a34a', '#facc15', '#0ea5e9', '#f472b6', '#fb923c', '#a855f7'];
+        const pieces = [];
+        for (let i = 0; i < 95; i++) {
+          pieces.push({
+            x: Math.random() * canvas.width,
+            y: -20 - Math.random() * canvas.height * 0.4,
+            w: 7 + Math.random() * 7,
+            h: 6 + Math.random() * 10,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            vy: 2.8 + Math.random() * 4.2,
+            vx: (Math.random() - 0.5) * 3,
+            rot: Math.random() * Math.PI * 2,
+            vRot: (Math.random() - 0.5) * 0.2
+          });
+        }
+
+        let frame = 0;
+        function animate() {
+          frame++;
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          let alive = false;
+          for (let i = 0; i < pieces.length; i++) {
+            const p = pieces[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.rot += p.vRot;
+            if (p.y < canvas.height + 20) alive = true;
+
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rot);
+            ctx.fillStyle = p.color;
+            ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+            ctx.restore();
+          }
+
+          if (alive && frame < 180) {
+            requestAnimationFrame(animate);
+          } else {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+          }
+        }
+        requestAnimationFrame(animate);
+      }
+
+      /* =========================================================
+         Event Listeners & Init
+      ========================================================= */
+      speedToggleBtn.addEventListener('click', function () {
+        if (speechRate === 0.85) {
+          speechRate = 0.65;
+          speedToggleBtn.classList.add('slow');
+          speedToggleBtn.textContent = '🐢 語速：慢速 0.65x';
+          showToast('已切換成慢速語音（0.65x）', false);
+        } else {
+          speechRate = 0.85;
+          speedToggleBtn.classList.remove('slow');
+          speedToggleBtn.textContent = '🔊 語速：正常 0.85x';
+          showToast('已切換成正常語音（0.85x）', false);
+        }
+      });
+
+      submitBtn.addEventListener('click', handleSubmit);
+
+      parentToggleBtn.addEventListener('click', function () {
+        const isOpen = parentTableBox.classList.toggle('open');
+        parentToggleBtn.textContent = isOpen ? '🙈 收起解答與語音稿' : '👀 家長看解答與語音稿';
+      });
+
+      window.addEventListener('beforeunload', stopAllSpeech);
+
+      // Initialize UI
+      speedToggleBtn.textContent = '🔊 語速：正常 0.85x';
+      renderQuiz();
+    })();
+  </script>
+</body>
+</html>
